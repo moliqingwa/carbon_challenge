@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="202px" height="143px" viewBox="0 0 202 143" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>右侧信息栏</title>
+    <defs>
+        <linearGradient x1="97.7153218%" y1="50%" x2="0%" y2="50%" id="linearGradient-1">
+            <stop stop-color="#495CFF" stop-opacity="0" offset="0%"></stop>
+            <stop stop-color="#FF9911" stop-opacity="0.509262832" offset="50.5335241%"></stop>
+            <stop stop-color="#EF3C3C" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="100%" y1="50%" x2="1.24443428%" y2="50%" id="linearGradient-2">
+            <stop stop-color="#727272" stop-opacity="0" offset="0%"></stop>
+            <stop stop-color="#FC4343" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="最新备份-3" transform="translate(-1190.000000, -612.000000)" fill="url(#linearGradient-1)" stroke="url(#linearGradient-2)">
+            <g id="编组-2" transform="translate(1190.000000, 564.000000)">
+                <g id="编组-41" transform="translate(0.000000, 48.000000)">
+                    <path d="M197,0.5 C198.242641,0.5 199.367641,1.00367966 200.181981,1.81801948 C200.99632,2.63235931 201.5,3.75735931 201.5,5 L201.5,5 L201.5,138 C201.5,139.242641 200.99632,140.367641 200.181981,141.181981 C199.367641,141.99632 198.242641,142.5 197,142.5 L197,142.5 L10.2071068,142.5 L0.5,132.792893 L0.5,5 C0.5,3.75735931 1.00367966,2.63235931 1.81801948,1.81801948 C2.63235931,1.00367966 3.75735931,0.5 5,0.5 L5,0.5 Z" id="形状结合" transform="translate(101.000000, 71.500000) scale(-1, 1) translate(-101.000000, -71.500000) "></path>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

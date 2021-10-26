@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="45px" height="45px" viewBox="0 0 45 45" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>气泡0.75</title>
+    <defs>
+        <linearGradient x1="50%" y1="0%" x2="50%" y2="99.1837508%" id="linearGradient-1">
+            <stop stop-color="#FFFFFF" stop-opacity="0.34215711" offset="0%"></stop>
+            <stop stop-color="#EDEDED" stop-opacity="0.869524762" offset="100%"></stop>
+        </linearGradient>
+        <circle id="path-2" cx="14.5" cy="14.5" r="14.5"></circle>
+        <filter x="-10.3%" y="-10.3%" width="120.7%" height="120.7%" filterUnits="objectBoundingBox" id="filter-3">
+            <feOffset dx="0" dy="0" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="1" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 1   0 0 0 0 1   0 0 0 0 1  0 0 0 0.5 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+        <filter x="-13.8%" y="-13.8%" width="127.6%" height="127.6%" filterUnits="objectBoundingBox" id="filter-4">
+            <feGaussianBlur stdDeviation="2" in="SourceAlpha" result="shadowBlurInner1"></feGaussianBlur>
+            <feOffset dx="0" dy="0" in="shadowBlurInner1" result="shadowOffsetInner1"></feOffset>
+            <feComposite in="shadowOffsetInner1" in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" result="shadowInnerInner1"></feComposite>
+            <feColorMatrix values="0 0 0 0 1   0 0 0 0 0.991361786   0 0 0 0 0.901213558  0 0 0 0.5 0" type="matrix" in="shadowInnerInner1"></feColorMatrix>
+        </filter>
+        <linearGradient x1="80.0919933%" y1="12.0514673%" x2="27.6053265%" y2="90.5246378%" id="linearGradient-5">
+            <stop stop-color="#FFFFFF" stop-opacity="0.577418187" offset="0%"></stop>
+            <stop stop-color="#FFFFFF" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="111.343581%" y1="16.0365987%" x2="-11.1551539%" y2="80.3192811%" id="linearGradient-6">
+            <stop stop-color="#FFFFFF" stop-opacity="0.449761664" offset="0%"></stop>
+            <stop stop-color="#FFFFFF" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="游戏界面" transform="translate(-653.000000, -267.000000)">
+            <g id="编组-12" transform="translate(653.000000, 267.000000)">
+                <g id="编组-5备份-2" transform="translate(8.000000, 8.000000)">
+                    <g id="椭圆形备份-21">
+                        <use fill="black" fill-opacity="1" filter="url(#filter-3)" xlink:href="#path-2"></use>
+                        <use fill="url(#linearGradient-1)" fill-rule="evenodd" xlink:href="#path-2"></use>
+                        <use fill="black" fill-opacity="1" filter="url(#filter-4)" xlink:href="#path-2"></use>
+                    </g>
+                    <circle id="椭圆形" fill="url(#linearGradient-5)" cx="24.1666667" cy="17.474359" r="1.11538462"></circle>
+                    <path d="M22.2806754,21.1820254 C21.6290255,22.098807 20.6388495,23.0370048 19.3101473,23.9966188 C18.3132235,24.7422344 17.2055676,25.2946436 15.9871795,25.6538462" id="直线-3" stroke="url(#linearGradient-6)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"></path>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

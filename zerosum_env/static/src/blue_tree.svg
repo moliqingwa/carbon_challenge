@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="45px" height="45px" viewBox="0 0 45 45" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>蓝队树</title>
+    <defs>
+        <linearGradient x1="26.4049817%" y1="-345.595479%" x2="50%" y2="100%" id="linearGradient-1">
+            <stop stop-color="#C2EFFF" offset="0%"></stop>
+            <stop stop-color="#00212C" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="29.4579414%" y1="-6.3981439%" x2="69.9955588%" y2="84.2857708%" id="linearGradient-2">
+            <stop stop-color="#E6F9FF" offset="0%"></stop>
+            <stop stop-color="#1AC0F1" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="21.460952%" y1="5.26072288%" x2="43.8463387%" y2="54.9620925%" id="linearGradient-3">
+            <stop stop-color="#FFFFFF" offset="0%"></stop>
+            <stop stop-color="#4FD1F0" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="18.2565394%" y1="-9.99843901%" x2="70.5694173%" y2="176.069597%" id="linearGradient-4">
+            <stop stop-color="#1ED5FF" offset="0%"></stop>
+            <stop stop-color="#003291" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="20.2302199%" y1="5.70442273%" x2="60.7108715%" y2="100%" id="linearGradient-5">
+            <stop stop-color="#7FEEFF" offset="0%"></stop>
+            <stop stop-color="#02A2D8" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="游戏界面" transform="translate(-563.000000, -447.000000)">
+            <g id="编组-14" transform="translate(563.000000, 447.000000)">
+                <g id="编组-3" transform="translate(4.000000, 4.000000)">
+                    <path d="M13.4193526,24.1079766 L15.5926848,27.1668478 L14.9568478,36.493663 C15.9499415,36.831221 17.1309922,37 18.5,37 C19.8690078,37 21.0500585,36.831221 22.0431522,36.493663 L21.3530217,26.8768804 L23.4743287,23.8592221 L21.3530217,22.7743096 L19.5583356,24.1079766 L19.1273913,20.1205239 L17.7800212,20.4004683 L17.2540652,24.3954674 L14.9568478,22.7743096 L13.4193526,24.1079766 Z" id="路径-2" fill="url(#linearGradient-1)"></path>
+                    <circle id="椭圆形备份-2" fill="url(#linearGradient-2)" cx="16.0869565" cy="10.0543478" r="10.0543478"></circle>
+                    <circle id="椭圆形备份" fill="url(#linearGradient-3)" cx="24.7336957" cy="6.23369565" r="4.625"></circle>
+                    <circle id="椭圆形" fill="url(#linearGradient-4)" cx="26.9456522" cy="15.2826087" r="10.0543478"></circle>
+                    <circle id="椭圆形备份" fill="url(#linearGradient-5)" cx="10.0543478" cy="15.2826087" r="10.0543478"></circle>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

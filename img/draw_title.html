@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>菜鸟教程(runoob.com)</title>
+</head>
+<body>
+
+<canvas id="myCanvas" width="300" height="300" style="border:1px solid #d3d3d3;">
+您的浏览器不支持 HTML5 canvas 标签。
+</canvas>
+<script>
+var c=document.getElementById("myCanvas");
+var ctx=c.getContext("2d");
+ctx.beginPath();
+// 队伍名称框线
+ctx.moveTo(20,40); // 左中线初始点
+ctx.lineTo(20,70);  // 左下角
+ctx.lineTo(200,70); 
+ctx.lineTo(220,50);
+ctx.lineTo(220,20); // 右上角
+ctx.lineTo(40,20);  // 左上角右顶点
+ctx.lineTo(20,40);
+ctx.strokeStyle="72716c";
+ctx.stroke();
+// 底色填充
+ctx.fillStyle="#a6a69c99";
+ctx.fill();
+
+
+// 队伍名称
+ctx.fillStyle="#000000";
+ctx.font="italic 25px Arial";
+ctx.fillText("队伍A",50,50);
+
+// 名称外包线
+ctx.moveTo(80,15);
+ctx.lineTo(38,15);
+ctx.lineTo(15,38);
+ctx.lineTo(15,60);
+ctx.strokeStyle='72716c';
+ctx.stroke();
+ctx.closePath();
+
+// 详细信息框线
+ctx.beginPath(); // 指定背景渐变区域 
+ctx.moveTo(30,60);
+ctx.lineTo(30,140);
+ctx.lineTo(40,150);
+ctx.stroke();
+
+var gradient=ctx.createLinearGradient(100,0,260,0); // (x1,y1,x2,y2)x1=x2 纵向渐变 y1=y2横向渐变
+gradient.addColorStop(0,"#a7a49bFF");
+gradient.addColorStop(1,"#a7a49b00");
+ctx.strokeStyle=gradient
+
+ctx.lineTo(260,150); // 下方向右框线渐变
+ctx.stroke();
+
+ctx.strokeStyle='#00000000';
+ctx.lineTo(260,60);
+ctx.stroke();
+
+ctx.strokeStyle=gradient;
+ctx.lineTo(210,60)
+ctx.stroke();
+
+ctx.closePath();
+
+
+// 添加渐变
+// var my_gradient=ctx.createLinearGradient(0,0,170,0); 
+gradient.addColorStop(0,"#a7a49bAA");
+gradient.addColorStop(1,"#a7a49b00");
+ctx.fillStyle=gradient;
+
+
+ctx.fill();
+
+// 添加详细信息
+ctx.fillStyle="#000000";
+ctx.font="16px Arial";
+// 当前经费
+let money = -50
+ctx.fillText(`当前经费: ${money}万 `, 40,90)
+// 当前种树
+let tree = 1
+ctx.fillText(`当前种树: ${tree} `, 40,110)
+// 捕集CO2数量 
+let count = -50
+ctx.fillText(`捕集CO2数量:${count}万吨`, 40,130)
+
+
+
+
+
+</script> 
+
+</body>
+</html>

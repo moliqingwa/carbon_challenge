@@ -1,0 +1,6 @@
+include LICENSE
+recursive-include zerosum_env *.py
+recursive-include zerosum_env *.html
+recursive-include zerosum_env *.js
+recursive-include zerosum_env *.json
+recursive-include zerosum_env *.svg

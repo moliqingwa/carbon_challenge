@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="160px" height="63px" viewBox="0 0 160 63" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>右侧名称框</title>
+    <defs>
+        <radialGradient cx="50%" cy="50%" fx="50%" fy="50%" r="177.109142%" gradientTransform="translate(0.500000,0.500000),scale(0.332741,1.000000),rotate(90.000000),translate(-0.500000,-0.500000)" id="radialGradient-1">
+            <stop stop-color="#FFA8A8" stop-opacity="0.69520921" offset="0%"></stop>
+            <stop stop-color="#E47676" stop-opacity="0.154042059" offset="94.0861629%"></stop>
+            <stop stop-color="#007DA1" stop-opacity="0.120026702" offset="100%"></stop>
+        </radialGradient>
+        <linearGradient x1="100%" y1="48.6205239%" x2="34.7569214%" y2="61.3535794%" id="linearGradient-2">
+            <stop stop-color="#FC4343" offset="0%"></stop>
+            <stop stop-color="#FF9612" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="最新备份-3" transform="translate(-1248.000000, -564.000000)">
+            <g id="编组-2" transform="translate(1190.000000, 564.000000)">
+                <g id="编组-40" transform="translate(58.000000, 0.000000)">
+                    <g id="编组-6" transform="translate(80.000000, 31.500000) scale(-1, 1) translate(-80.000000, -31.500000) translate(0.000000, 0.000000)">
+                        <path d="M150.345519,8.18097954 L150.345519,36.0601616 L131.547072,54.8252282 L8.15851427,54.8252282 L8.15851427,26.9460461 L26.9569614,8.18097954 L150.345519,8.18097954 Z" id="形状结合" stroke="#FC4343" fill="url(#radialGradient-1)"></path>
+                        <rect id="矩形" fill="#FC4343" x="125.19118" y="49.9652503" width="3.57967511" height="4.76442487"></rect>
+                        <rect id="矩形备份-16" fill="#FC4343" x="120.41828" y="49.9652503" width="3.57967511" height="4.76442487"></rect>
+                        <rect id="矩形备份-17" fill="#FC4343" x="115.64538" y="49.9652503" width="3.57967511" height="4.76442487"></rect>
+                        <rect id="矩形备份-18" fill="#FC4343" x="110.87248" y="49.9652503" width="3.57967511" height="4.76442487"></rect>
+                        <rect id="矩形备份-19" fill="#FC4343" x="106.09958" y="49.9652503" width="3.57967511" height="4.76442487"></rect>
+                        <rect id="矩形" fill="url(#linearGradient-2)" x="122.208118" y="7.68097954" width="28.6374009" height="4.76442487"></rect>
+                        <rect id="矩形" fill="#FC4343" x="92.9741044" y="11.2542982" width="29.2340134" height="1.19110622"></rect>
+                        <g id="编组-4">
+                            <rect id="矩形" stroke="#FC4343" stroke-width="2" fill="#FC4343" x="76.476005" y="2.02418764" width="1" height="1"></rect>
+                            <rect id="矩形备份-11" stroke="#FC4343" stroke-width="2" fill="#FC4343" x="79.8593438" y="2.02418764" width="1" height="1"></rect>
+                            <rect id="矩形备份-12" stroke="#FC4343" stroke-width="2" fill="#FC4343" x="83.2426825" y="2.02418764" width="1" height="1"></rect>
+                            <polyline id="直线-2" stroke="#FC4343" stroke-width="2" stroke-linecap="square" points="1.99069534 44.7926868 1.99069534 24.2793027 24.2863636 2.023225 72.6919862 2.023225"></polyline>
+                            <path d="M23.4889286,6.23501251e-13 L23.5116071,0.023 L41.4056718,0.0237053481 L41.4056718,3.02081743 L24.7046071,3.02 L12.9153273,14.834948 L10.8006071,12.7156697 L23.4616071,0.027 L23.4616754,0.0237053481 L23.4656071,0.023 L23.4889286,6.23501251e-13 Z" id="形状结合" fill="#FC4343"></path>
+                            <polygon id="矩形备份-9" fill="#FC4343" transform="translate(1.495333, 34.165230) rotate(-90.000000) translate(-1.495333, -34.165230) " points="-4.1624215 32.6698965 7.15308756 32.6698965 7.15308756 35.6605626 -4.1624215 35.6605626"></polygon>
+                        </g>
+                        <g id="编组-4备份" transform="translate(117.881770, 40.603657) scale(-1, -1) translate(-117.881770, -40.603657) translate(75.763540, 18.207313)">
+                            <rect id="矩形" stroke="#FC4343" stroke-width="2" fill="#FC4343" x="76.476005" y="2.02418764" width="1" height="1"></rect>
+                            <rect id="矩形备份-11" stroke="#FC4343" stroke-width="2" fill="#FC4343" x="79.8593438" y="2.02418764" width="1" height="1"></rect>
+                            <rect id="矩形备份-12" stroke="#FC4343" stroke-width="2" fill="#FC4343" x="83.2426825" y="2.02418764" width="1" height="1"></rect>
+                            <polyline id="直线-2" stroke="#FC4343" stroke-width="2" stroke-linecap="square" points="1.99069534 44.7926868 1.99069534 24.2793027 24.2863636 2.023225 72.6919862 2.023225"></polyline>
+                            <path d="M23.4889286,-2.89546165e-13 L23.5116071,0.023 L41.4056718,0.0237053481 L41.4056718,3.02081743 L24.7046071,3.02 L12.9153273,14.834948 L10.8006071,12.7156697 L23.4616071,0.027 L23.4616754,0.0237053481 L23.4656071,0.023 L23.4889286,-2.89546165e-13 Z" id="形状结合" fill="#FC4343"></path>
+                            <polygon id="矩形备份-9" fill="#FC4343" transform="translate(1.495333, 34.165230) rotate(-90.000000) translate(-1.495333, -34.165230) " points="-4.1624215 32.6698965 7.15308756 32.6698965 7.15308756 35.6605626 -4.1624215 35.6605626"></polygon>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

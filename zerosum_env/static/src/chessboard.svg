@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="784px" height="784px" viewBox="0 0 784 784" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>棋盘</title>
+    <defs>
+        <linearGradient x1="100%" y1="0.162020597%" x2="100%" y2="100%" id="linearGradient-1">
+            <stop stop-color="#2175DF" offset="0%"></stop>
+            <stop stop-color="#4789EB" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="100%" y1="0.162020597%" x2="100%" y2="98.9812138%" id="linearGradient-2">
+            <stop stop-color="#8085C0" offset="0%"></stop>
+            <stop stop-color="#708EE0" offset="99.0227546%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="最新备份-3" transform="translate(-328.000000, -120.000000)">
+            <g id="棋盘" transform="translate(328.000000, 120.000000)">
+                <path d="M254,10 L736,10 L776,50 L776,738 L736,778 L48,778 L8,738 L8,66 L48,26 L238,26 L254,10 Z" id="形状结合" fill="#032191" opacity="0.197527931"></path>
+                <path d="M741.90512,0 L741.905,0.371 L784,47.9685457 L783.888,48.067 L783.888921,208 L767.895092,208 L767.895,53.905 L734.373,16 L496,16 L496,0 L741.90512,0 Z" id="形状结合" fill="url(#linearGradient-1)"></path>
+                <path d="M245.90512,576 L245.905,576.371 L288,623.968546 L287.888,624.066 L287.888921,784 L271.895092,784 L271.895,629.905 L238.373,592 L0,592 L0,576 L245.90512,576 Z" id="形状结合备份-11" fill="url(#linearGradient-2)" transform="translate(144.000000, 680.000000) scale(-1, -1) translate(-144.000000, -680.000000) "></path>
+                <g id="编组-9" transform="translate(55.000000, 57.000000)" opacity="0.149428595" stroke="#FFFFFF">
+                    <rect id="矩形" stroke-width="0.933333333" x="0.466666667" y="0.466666667" width="674.066667" height="674.066667"></rect>
+                    <line x1="630" y1="1" x2="630" y2="674" id="直线" stroke-linecap="square"></line>
+                    <line x1="585" y1="1" x2="585" y2="674" id="直线备份" stroke-linecap="square"></line>
+                    <line x1="540" y1="1" x2="540" y2="674" id="直线备份-2" stroke-linecap="square"></line>
+                    <line x1="495" y1="1" x2="495" y2="674" id="直线备份-3" stroke-linecap="square"></line>
+                    <line x1="450" y1="1" x2="450" y2="674" id="直线备份-4" stroke-linecap="square"></line>
+                    <line x1="405" y1="1" x2="405" y2="674" id="直线备份-5" stroke-linecap="square"></line>
+                    <line x1="360" y1="1" x2="360" y2="674" id="直线备份-6" stroke-linecap="square"></line>
+                    <line x1="315" y1="1" x2="315" y2="674" id="直线备份-7" stroke-linecap="square"></line>
+                    <line x1="270" y1="1" x2="270" y2="674" id="直线备份-8" stroke-linecap="square"></line>
+                    <line x1="225" y1="1" x2="225" y2="674" id="直线备份-9" stroke-linecap="square"></line>
+                    <line x1="180" y1="1" x2="180" y2="674" id="直线备份-10" stroke-linecap="square"></line>
+                    <line x1="135" y1="1" x2="135" y2="674" id="直线备份-11" stroke-linecap="square"></line>
+                    <line x1="90" y1="1" x2="90" y2="674" id="直线备份-12" stroke-linecap="square"></line>
+                    <line x1="45" y1="1" x2="45" y2="674" id="直线备份-13" stroke-linecap="square"></line>
+                    <line x1="1" y1="45" x2="674" y2="45" id="直线" stroke-linecap="square"></line>
+                    <line x1="1" y1="90" x2="674" y2="90" id="直线备份" stroke-linecap="square"></line>
+                    <line x1="1" y1="135" x2="674" y2="135" id="直线备份-2" stroke-linecap="square"></line>
+                    <line x1="1" y1="180" x2="674" y2="180" id="直线备份-3" stroke-linecap="square"></line>
+                    <line x1="1" y1="225" x2="674" y2="225" id="直线备份-4" stroke-linecap="square"></line>
+                    <line x1="1" y1="270" x2="674" y2="270" id="直线备份-5" stroke-linecap="square"></line>
+                    <line x1="1" y1="315" x2="674" y2="315" id="直线备份-6" stroke-linecap="square"></line>
+                    <line x1="1" y1="360" x2="674" y2="360" id="直线备份-7" stroke-linecap="square"></line>
+                    <line x1="1" y1="405" x2="674" y2="405" id="直线备份-8" stroke-linecap="square"></line>
+                    <line x1="1" y1="450" x2="674" y2="450" id="直线备份-9" stroke-linecap="square"></line>
+                    <line x1="1" y1="495" x2="674" y2="495" id="直线备份-10" stroke-linecap="square"></line>
+                    <line x1="1" y1="540" x2="674" y2="540" id="直线备份-11" stroke-linecap="square"></line>
+                    <line x1="1" y1="585" x2="674" y2="585" id="直线备份-12" stroke-linecap="square"></line>
+                    <line x1="1" y1="630" x2="674" y2="630" id="直线备份-13" stroke-linecap="square"></line>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

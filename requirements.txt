@@ -1,0 +1,6 @@
+flask
+gym
+ipython
+jsonschema
+numpy
+requests

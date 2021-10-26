@@ -1,0 +1,721 @@
+<!--
+  Copyright 2020 Kaggle Inc
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<!DOCTYPE html>
+<html lang="zh-cn">
+  <head>
+    <title>Kaggle Simulation Player</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" charset="utf-8"/>
+    <link
+      rel="stylesheet"
+      href="./css/reset.css"
+    />
+    <style type="text/css">
+      html,
+      body {
+        height: 100%;
+        font-family: sans-serif;
+        margin: 0px;
+      }
+      canvas {
+        /* image-rendering: -moz-crisp-edges;
+        image-rendering: -webkit-crisp-edges;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges; */
+      }
+    </style>
+    <script src="./js/preact.umd.js"></script>
+    <script src="./js/hooks.umd.js"></script>
+    <script src="./js/htm.umd.js"></script>
+    <script>
+      // Polyfill for Styled Components
+      window.React = {
+        ...preact,
+        createElement: preact.h,
+        PropTypes: { func: {} },
+      };
+    </script>
+    <script src="./js/styled-components.min.js"></script>
+  </head>
+  <body>
+    <script>
+      /*window.kaggle*/
+    </script>
+    <script>
+      const h = htm.bind(preact.h);
+      const { useContext, useEffect, useRef, useState } = preactHooks;
+      const styled = window.styled.default;
+
+      const Context = preact.createContext({});
+
+      const Loading = styled.div`
+        animation: rotate360 1.1s infinite linear;
+        border: 8px solid rgba(255, 255, 255, 0.2);
+        border-left-color: #0cb1ed;
+        border-radius: 50%;
+        height: 40px;
+        position: relative;
+        transform: translateZ(0);
+        width: 40px;
+
+        @keyframes rotate360 {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+      `;
+
+      const Round = styled(
+        (props) => {
+            const { environment, step } = useContext(Context);
+            const value = step + 1;
+            return h`
+        <svg width="489px" height="58px" viewBox="0 0 489 58" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>游戏轮数</title>
+    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="最新备份-3" transform="translate(-475.000000, -37.000000)">
+            <g id="编组-47" transform="translate(475.000000, 37.000000)">
+                <g id="编组-7" transform="translate(0.000000, 10.000000)">
+                    <rect id="矩形" x="0" y="1.36424205e-12" width="23" height="39"></rect>
+                    <path d="M3.9008626,-7.10542736e-14 L19.086,15.577 L19.0991374,15.5641053 L23,19.5653556 L4.05295309,39 L0.152090496,34.9987497 L15.186,19.577 L3.77475828e-15,4.00125032 L3.9008626,-7.10542736e-14 Z" id="形状结合备份-7" fill="#0649C8" opacity="0.301486061" transform="translate(11.500000, 19.500000) scale(-1, 1) translate(-11.500000, -19.500000) "></path>
+                </g>
+                <g id="编组-7备份" transform="translate(39.000000, 10.000000)">
+                    <rect id="矩形" x="0" y="1.36424205e-12" width="23" height="39"></rect>
+                    <path d="M3.9008626,-7.10542736e-14 L19.086,15.577 L19.0991374,15.5641053 L23,19.5653556 L4.05295309,39 L0.152090496,34.9987497 L15.186,19.577 L3.77475828e-15,4.00125032 L3.9008626,-7.10542736e-14 Z" id="形状结合备份-7" fill="#0649C8" opacity="0.498594738" transform="translate(11.500000, 19.500000) scale(-1, 1) translate(-11.500000, -19.500000) "></path>
+                </g>
+                <g id="编组-7备份-2" transform="translate(66.000000, 10.000000)">
+                    <rect id="矩形" x="0" y="1.36424205e-12" width="23" height="39"></rect>
+                    <path d="M3.9008626,-7.10542736e-14 L19.086,15.577 L19.0991374,15.5641053 L23,19.5653556 L4.05295309,39 L0.152090496,34.9987497 L15.186,19.577 L3.77475828e-15,4.00125032 L3.9008626,-7.10542736e-14 Z" id="形状结合备份-7" fill="#0649C8" opacity="0.79884411" transform="translate(11.500000, 19.500000) scale(-1, 1) translate(-11.500000, -19.500000) "></path>
+                </g>
+                <g id="编组-7备份-3" transform="translate(89.000000, 10.000000)">
+                    <rect id="矩形" x="0" y="1.36424205e-12" width="23" height="39"></rect>
+                    <path d="M3.9008626,-7.10542736e-14 L19.086,15.577 L19.0991374,15.5641053 L23,19.5653556 L4.05295309,39 L0.152090496,34.9987497 L15.186,19.577 L3.77475828e-15,4.00125032 L3.9008626,-7.10542736e-14 Z" id="形状结合备份-7" fill="#0649C8" transform="translate(11.500000, 19.500000) scale(-1, 1) translate(-11.500000, -19.500000) "></path>
+                </g>
+                <g id="编组-46" transform="translate(377.000000, 10.000000)">
+                    <g id="编组-7备份-3" transform="translate(11.500000, 19.500000) rotate(-180.000000) translate(-11.500000, -19.500000) ">
+                        <rect id="矩形" x="0" y="1.36424205e-12" width="23" height="39"></rect>
+                        <path d="M3.9008626,-7.10542736e-14 L19.086,15.577 L19.0991374,15.5641053 L23,19.5653556 L4.05295309,39 L0.152090496,34.9987497 L15.186,19.577 L3.77475828e-15,4.00125032 L3.9008626,-7.10542736e-14 Z" id="形状结合备份-7" fill="#0649C8" transform="translate(11.500000, 19.500000) scale(-1, 1) translate(-11.500000, -19.500000) "></path>
+                    </g>
+                </g>
+                <g id="编组-26" transform="translate(112.000000, 0.000000)">
+                    <path d="M33.1404363,56.7713885 L33.1404062,56.7483885 L1.86340623,31.2878318 L33.1404062,5.82638853 L33.1404363,5.77138853 L232.162929,5.77138853 L232.163406,5.82638853 L263.373884,31.2878318 L232.163406,56.7483885 L232.162929,56.7713885 L33.1404363,56.7713885 Z" id="形状结合备份-8" fill="#0FC6FF"></path>
+                    <path d="M232.052309,2.27153618 L261.488957,26.2865576 L232.052989,50.2484502 L34.0983972,50.2713267 L4.72524843,26.2883273 L34.0978237,2.3262409 L232.052309,2.27153618 Z" id="形状结合" stroke="#0649C8" stroke-width="3" fill="#0F77FF"></path>
+                </g>
+                <g id="编组-16备份" transform="translate(477.500000, 29.500000) rotate(-180.000000) translate(-477.500000, -29.500000) translate(466.000000, 10.000000)">
+                    <g id="编组-7" transform="translate(0.000000, 0.000000)">
+                        <rect id="矩形" x="0" y="1.36424205e-12" width="23" height="39"></rect>
+                        <path d="M3.9008626,-7.10542736e-14 L19.086,15.577 L19.0991374,15.5641053 L23,19.5653556 L4.05295309,39 L0.152090496,34.9987497 L15.186,19.577 L3.77475828e-15,4.00125032 L3.9008626,-7.10542736e-14 Z" id="形状结合备份-7" fill="#0649C8" opacity="0.301486061" transform="translate(11.500000, 19.500000) scale(-1, 1) translate(-11.500000, -19.500000) "></path>
+                    </g>
+                </g>
+                <g id="编组-7备份" transform="translate(438.500000, 29.500000) rotate(-180.000000) translate(-438.500000, -29.500000) translate(427.000000, 10.000000)">
+                    <rect id="矩形" x="0" y="4.09272616e-12" width="23" height="39"></rect>
+                    <path d="M3.9008626,2.65742983e-12 L19.086,15.577 L19.0991374,15.5641053 L23,19.5653556 L4.05295309,39 L0.152090496,34.9987497 L15.186,19.577 L3.77475828e-15,4.00125032 L3.9008626,2.65742983e-12 Z" id="形状结合备份-7" fill="#0649C8" opacity="0.498594738" transform="translate(11.500000, 19.500000) scale(-1, 1) translate(-11.500000, -19.500000) "></path>
+                </g>
+                <g id="编组-15备份" transform="translate(411.500000, 29.500000) rotate(-180.000000) translate(-411.500000, -29.500000) translate(400.000000, 10.000000)">
+                    <g id="编组-7备份-2" transform="translate(0.000000, 0.000000)">
+                        <rect id="矩形" x="0" y="1.36424205e-12" width="23" height="39"></rect>
+                        <path d="M3.9008626,-7.10542736e-14 L19.086,15.577 L19.0991374,15.5641053 L23,19.5653556 L4.05295309,39 L0.152090496,34.9987497 L15.186,19.577 L3.77475828e-15,4.00125032 L3.9008626,-7.10542736e-14 Z" id="形状结合备份-7" fill="#0649C8" opacity="0.79884411" transform="translate(11.500000, 19.500000) scale(-1, 1) translate(-11.500000, -19.500000) "></path>
+                    </g>
+                </g>
+                <text x='244.5' y='33' text-anchor="middle" font-family="PingFangSC-Semibold" font-size="22px" font-weight="600" style="fill: white;">游戏轮数：${value} / ${environment.steps.length}</text>
+            </g>
+        </g>
+    </g>
+</svg>
+        `;
+        }
+      )`
+      align-items: center;
+      justify-content: center;
+      `
+
+      const Header = styled((props) => {
+        return h`<div className=${props.className} >
+          <${Round} />
+        </div>`;
+      })`
+        align-items: center;
+        box-sizing: border-box;
+        color: #fff;
+        display: flex;
+        flex: 0 0 36px;
+        font-size: 14px;
+        justify-content: center;
+        padding: 37px 8px 25px 8px;
+        width: 100%;
+      `;
+
+      const Renderer = styled((props) => {
+        const context = useContext(Context);
+        const { animate, debug, playing, renderer, speed } = context;
+        const ref = preact.createRef();
+
+        useEffect(async () => {
+          if (!ref.current) return;
+
+          const renderFrame = async (start, step, lastFrame) => {
+            if (step !== context.step) return;
+            if (lastFrame === 1) {
+              if (!animate) return;
+              start = Date.now();
+            }
+            const frame =
+              playing || animate
+                ? Math.min((Date.now() - start) / speed, 1)
+                : 1;
+            try {
+              if (debug) console.time("render");
+              await renderer({
+                ...context,
+                frame,
+                height: ref.current.clientHeight,
+                hooks: preactHooks,
+                parent: ref.current,
+                preact,
+                styled,
+                width: ref.current.clientWidth,
+              });
+            } catch (error) {
+              if (debug) console.error(error);
+              console.log({ ...context, frame, error });
+            } finally {
+              if (debug) console.timeEnd("render");
+            }
+            window.requestAnimationFrame(() => renderFrame(start, step, frame));
+          };
+
+          await renderFrame(Date.now(), context.step);
+        }, [ref.current, context.step, context.renderer]);
+
+        return h`<div className=${props.className} ref=${ref} />`;
+      })`
+        align-items: center;
+        box-sizing: border-box;
+        display: flex;
+        height: 100%;
+        left: 0;
+        justify-content: center;
+        position: absolute;
+        top: 0;
+        width: 100%;
+      `;
+
+      const Processing = styled((props) => {
+        const { processing } = useContext(Context);
+        const text = processing === true ? "Processing..." : processing;
+        return h`<div className=${props.className}>${text}</div>`;
+      })`
+        bottom: 0;
+        color: #fff;
+        font-size: 12px;
+        left: 0;
+        line-height: 24px;
+        position: absolute;
+        text-align: center;
+        width: 100%;
+      `;
+
+      const Viewer = styled((props) => {
+        const { processing } = useContext(Context);
+        return h`<div className=${props.className}>
+          <${Renderer} />
+          ${processing && h`<${Processing} />`}
+        </div>`;
+      })`
+        background-color: #000b2a;
+        background-image: radial-gradient(
+          circle closest-side,
+          #000b49,
+          #000b2a
+        );
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+        width: 100%;
+      `;
+
+      // Partitions the elements of arr into subarrays of max length num.
+      const groupIntoSets = (arr, num) => {
+        const sets = [];
+        arr.forEach(a => {
+          if (sets.length === 0 || sets[sets.length - 1].length === num) {
+            sets.push([]);
+          }
+          sets[sets.length - 1].push(a);
+        });
+        return sets;
+      }
+
+      // Expects `width` input prop to set proper max-width for agent name span.
+      const Legend = styled((props) => {
+        const { agents, legend } = useContext(Context);
+
+        const agentPairs = groupIntoSets(agents.sort((a, b) => a.index - b.index), 2);
+
+        return h`<div className=${props.className}>
+          ${agentPairs.map(agentList =>
+            h`<ul>
+                ${agentList.map(a =>
+                  h`<li key=${a.id} title="id: ${a.id}" style="color:${a.color || "#FFF"}">
+                      ${a.image && h`<img src=${a.image} />`}
+                      <span>${a.name}</span>
+                    </li>`
+                )}
+              </ul>`)}
+        </div>`;
+      })`
+        background-color: #000b2a;
+        font-family: sans-serif;
+        font-size: 14px;
+        height: 48px;
+        width: 100%;
+
+        ul {
+          align-items: center;
+          display: flex;
+          flex-direction: row;
+          justify-content: center;
+        }
+
+        li {
+          align-items: center;
+          display: inline-flex;
+          transition: color 1s;
+        }
+
+        span {
+          max-width: ${p => (p.width || 400) * 0.5 - 36}px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        img {
+          height: 24px;
+          margin-left: 4px;
+          margin-right: 4px;
+          width: 24px;
+        }
+      `;
+
+      const StepInput = styled.input.attrs({
+        type: "range",
+      })`
+        appearance: none;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 2px;
+        display: block;
+        flex: 1;
+        height: 4px;
+        opacity: 0.8;
+        outline: none;
+        transition: opacity 0.2s;
+        width: 100%;
+
+        &:hover {
+          opacity: 1;
+        }
+
+        &::-webkit-slider-thumb {
+          appearance: none;
+          background: #1ebeff;
+          border-radius: 100%;
+          cursor: pointer;
+          height: 12px;
+          margin: 0;
+          position: relative;
+          width: 12px;
+
+          &::after {
+            content: "";
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            width: 200px;
+            height: 8px;
+            background: green;
+          }
+        }
+      `;
+
+      const PlayButton = styled.button`
+        align-items: center;
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        flex: 0 0 56px;
+        font-size: 20px;
+        height: 40px;
+        justify-content: center;
+        opacity: 0.8;
+        outline: none;
+        transition: opacity 0.2s;
+
+        &:hover {
+          opacity: 1;
+        }
+      `;
+
+      const StepCount = styled.span`
+        align-items: center;
+        color: white;
+        display: flex;
+        font-size: 14px;
+        justify-content: center;
+        opacity: 0.8;
+        padding: 0 16px;
+        pointer-events: none;
+      `;
+
+      const Controls = styled((props) => {
+        const { environment, pause, play, playing, setStep, step } = useContext(
+          Context
+        );
+        const value = step + 1;
+        const onClick = () => (playing ? pause() : play());
+        const onInput = (e) => {
+          pause();
+          setStep(parseInt(e.target.value) - 1);
+        };
+
+        return h`
+          <div className=${props.className}>
+            <${PlayButton} onClick=${onClick}><svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="#FFFFFF">${
+          playing
+            ? h`<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/><path d="M0 0h24v24H0z" fill="none"/>`
+            : h`<path d="M8 5v14l11-7z"/><path d="M0 0h24v24H0z" fill="none"/>`
+        }</svg><//>
+            <${StepInput} min="1" max=${
+          environment.steps.length
+        } value="${value}" onInput=${onInput} />
+            <${StepCount}>${value} / ${environment.steps.length}<//>
+          </div>
+        `;
+      })`
+        align-items: center;
+        border-top: 4px solid #212121;
+        display: flex;
+        flex: 0 0 44px;
+        width: 100%;
+      `;
+
+      const Info = styled((props) => {
+        const {
+          environment,
+          playing,
+          step,
+          speed,
+          animate,
+          header,
+          controls,
+          settings,
+        } = useContext(Context);
+
+        return h`
+          <div className=${props.className}>
+            info:
+            step(${step}),
+            playing(${playing ? "T" : "F"}),
+            speed(${speed}),
+            animate(${animate ? "T" : "F"})
+          </div>`;
+      })`
+        color: #888;
+        font-family: monospace;
+        font-size: 12px;
+      `;
+
+      const Settings = styled((props) => {
+        const { environment, pause, play, playing, setStep, step } = useContext(
+          Context
+        );
+
+        return h`
+          <div className=${props.className}>
+            <${Info} />
+          </div>
+        `;
+      })`
+        background: #fff;
+        border-top: 4px solid #212121;
+        box-sizing: border-box;
+        padding: 20px;
+        width: 100%;
+
+        h1 {
+          font-size: 20px;
+        }
+      `;
+
+      const Player = styled((props) => {
+        const context = useContext(Context);
+        const { agents, controls, header, legend, loading, settings, width } = context;
+        return h`
+          <div className=${props.className}>
+            ${loading && h`<${Loading} />`}
+            ${!loading && header && h`<${Header} />`}
+            ${!loading && h`<${Viewer} />`}
+            ${!loading && legend && h`<${Legend} width=${width}/>`}
+            ${!loading && controls && h`<${Controls} />`}
+            ${!loading && settings && h`<${Settings} />`}
+          </div>`;
+      })`
+        align-items: center;
+        background-image: linear-gradient(179deg, #0084FF 0%, #FFABAB 100%);
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        justify-content: center;
+        position: relative;
+        width: 100%;
+      `;
+
+      const App = () => {
+        const renderCountRef = useRef(0);
+        const [_, setRenderCount] = useState(0);
+
+        // These are bindings to the 0-9 keys and are milliseconds of timeout per step
+        const speeds = [
+          0,
+          3000,
+          1000,
+          500,
+          333, // Default
+          200,
+          100,
+          50,
+          25,
+          10,
+        ];
+
+        const contextRef = useRef({
+          animate: false,
+          agents: [],
+          controls: false,
+          debug: false,
+          environment: { steps: [], info: {} },
+          header: window.innerHeight >= 600,
+          height: window.innerHeight,
+          interactive: false,
+          legend: true,
+          loading: false,
+          playing: false,
+          processing: false,
+          renderer: () => "DNE",
+          settings: false,
+          speed: speeds[4],
+          step: 0,
+          width: window.innerWidth,
+        });
+
+        // Context helpers.
+        const rerender = (contextRef.current.rerender = () =>
+          setRenderCount((renderCountRef.current += 1)));
+        const setStep = (contextRef.current.setStep = (newStep) => {
+          contextRef.current.step = newStep;
+          rerender();
+        });
+        const setPlaying = (contextRef.current.setPlaying = (playing) => {
+          contextRef.current.playing = playing;
+          rerender();
+        });
+        const pause = (contextRef.current.pause = () => setPlaying(false));
+
+        const playNext = () => {
+          const context = contextRef.current;
+
+          if (
+            context.playing &&
+            context.step < context.environment.steps.length - 1
+          ) {
+            setStep(context.step + 1);
+            play(true);
+          } else {
+            pause();
+          }
+        };
+
+        const play = (contextRef.current.play = (continuing) => {
+          const context = contextRef.current;
+          if (context.playing && !continuing) return;
+          if (!context.playing) setPlaying(true);
+          if (
+            !continuing &&
+            context.step === context.environment.steps.length - 1
+          ) {
+            setStep(0);
+          }
+          setTimeout(playNext, context.speed);
+        });
+
+        const updateContext = (o) => {
+          const context = contextRef.current;
+          Object.assign(context, o, {
+            environment: { ...context.environment, ...(o.environment || {}) },
+          });
+          rerender();
+        };
+
+        // First time setup.
+        useEffect(() => {
+          // Timeout is used to ensure useEffect renders once.
+          setTimeout(() => {
+            // Initialize context with window.kaggle.
+            updateContext(window.kaggle || {});
+
+            if (window.kaggle.playing) {
+                play(true);
+            }
+
+            // Listen for messages received to update the context.
+            window.addEventListener(
+              "message",
+              (event) => {
+                // Ensure the environment names match before updating.
+                try {
+                  if (
+                    event.data.environment.name ==
+                    contextRef.current.environment.name
+                  ) {
+                    updateContext(event.data);
+                  }
+                } catch {}
+              },
+              false
+            );
+            // Listen for keyboard commands.
+            window.addEventListener(
+              "keydown",
+              (event) => {
+                const {
+                  interactive,
+                  isInteractive,
+                  playing,
+                  step,
+                  environment,
+                } = contextRef.current;
+                const key = event.keyCode;
+                const zero_key = 48
+                const nine_key = 57
+                if (
+                  interactive ||
+                  isInteractive() ||
+                  (key !== 32 && key !== 37 && key !== 39 && !(key >= zero_key && key <= nine_key))
+                )
+                  return;
+
+                if (key === 32) {
+                  playing ? pause() : play();
+                } else if (key === 39) {
+                  contextRef.current.playing = false;
+                  if (step < environment.steps.length - 1) setStep(step + 1);
+                  rerender();
+                } else if (key === 37) {
+                  contextRef.current.playing = false;
+                  if (step > 0) setStep(step - 1);
+                  rerender();
+                } else if (key >= zero_key && key <= nine_key) {
+                  contextRef.current.speed = speeds[key - zero_key];
+                }
+                event.preventDefault();
+                return false;
+              },
+              false
+            );
+          }, 1);
+        }, []);
+
+        if (contextRef.current.debug) {
+          console.log("context", contextRef.current);
+        }
+
+        // Ability to update context.
+        contextRef.current.update = updateContext;
+
+        // Ability to communicate with ipython.
+        const execute = (contextRef.current.execute = (source) =>
+          new Promise((resolve, reject) => {
+            try {
+              window.parent.IPython.notebook.kernel.execute(source, {
+                iopub: {
+                  output: (resp) => {
+                    const type = resp.msg_type;
+                    if (type === "stream") return resolve(resp.content.text);
+                    if (type === "error") return reject(new Error(resp.evalue));
+                    return reject(new Error("Unknown message type: " + type));
+                  },
+                },
+              });
+            } catch (e) {
+              reject(new Error("IPython Unavailable: " + e));
+            }
+          }));
+
+        // Ability to return an action from an interactive session.
+        contextRef.current.act = (action) => {
+          const id = contextRef.current.environment.id;
+          updateContext({ processing: true });
+          execute(`
+            import json
+            from kaggle_environments import interactives
+            if "${id}" in interactives:
+                action = json.loads('${JSON.stringify(action)}')
+                env, trainer = interactives["${id}"]
+                trainer.step(action)
+                print(json.dumps(env.steps))`)
+            .then((resp) => {
+              try {
+                updateContext({
+                  processing: false,
+                  environment: { steps: JSON.parse(resp) },
+                });
+                play();
+              } catch (e) {
+                updateContext({ processing: resp.split("\n")[0] });
+                console.error(resp, e);
+              }
+            })
+            .catch((e) => console.error(e));
+        };
+
+        // Check if currently interactive.
+        contextRef.current.isInteractive = () => {
+          const context = contextRef.current;
+          const steps = context.environment.steps;
+          return (
+            context.interactive &&
+            !context.processing &&
+            context.step === steps.length - 1 &&
+            steps[context.step].some((s) => s.status === "ACTIVE")
+          );
+        };
+
+        return h`
+          <${Context.Provider} value=${contextRef.current}>
+            <${Player} />
+          <//>`;
+      };
+
+      preact.render(h`<${App} />`, document.body);
+    </script>
+  </body>
+</html>

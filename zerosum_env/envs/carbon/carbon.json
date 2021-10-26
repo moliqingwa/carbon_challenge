@@ -1,0 +1,249 @@
+{
+  "name": "Carbon Neutrality",
+  "title": "Carbon Neutrality",
+  "description": "The game of arriving carbon neutrality.",
+  "version": "1.0.0",
+  "agents": [
+    1,
+    2,
+    4
+  ],
+  "configuration": {
+    "episodeSteps": 300,
+    "startingCarbon": {
+      "description": "The starting amount of carbon available on the board.",
+      "type": "integer",
+      "default": 1200
+    },
+    "size": {
+      "description": "The number of cells vertically and horizontally on the board.",
+      "type": "integer",
+      "default": 15,
+      "minimum": 2
+    },
+    "recCollectorCost": {
+      "description": "The amount of recruitment center to recruit a new collector.",
+      "type": "integer",
+      "default": 30,
+      "minimum": 0
+    },
+    "recPlantorCost": {
+      "description": "The amount of recruitment center to recruit a new plantor.",
+      "type": "integer",
+      "default": 30,
+      "minimum": 0
+    },
+    "moveCost": {
+      "description": "The percent deducted from ship's current carbon per move.",
+      "type": "number",
+      "default": 0
+    },
+    "smeltCost": {
+      "description": "The amount of carbon to smelt cargos into carbon .",
+      "type": "integer",
+      "default": 0,
+      "minimum": 0
+    },
+    "plantorLimit": {
+      "description": "The limitation of plantor.",
+      "type": "integer",
+      "default": 1,
+      "minimum": 0
+    },
+    "collectorLimit": {
+      "description": "The limitation of collector.",
+      "type": "integer",
+      "default": 2,
+      "minimum": 0
+    },
+    "plantCost": {
+      "description": "The amount of plantor to plant a tree.",
+      "type": "integer",
+      "default": 20,
+      "minimum": 0
+    },
+    "co2FrmWithered": {
+      "description": "The amount of carbon from withered tree.",
+      "type": "integer",
+      "default": 5,
+      "minimum": 0
+    },
+    "seizeCost": {
+      "description": "The amount of plantor to seize a tree from competitor.",
+      "type": "number",
+      "default": 40,
+      "minimum": 0
+    },
+    "collectRate": {
+      "description": "The rate of collector collected from a cell by not moving.",
+      "type": "number",
+      "default": 0.5,
+      "minimum": 0
+    },
+    "regenRate": {
+      "description": "The rate carbon regenerates on the board.",
+      "type": "number",
+      "default": 0.05,
+      "minimum": 0
+    },
+    "startingCellCarbon": {
+      "description": "The starting maximum mount of carbon in cell.",
+      "type": "number",
+      "default": 50,
+      "minimum": 0
+    },
+    "maxCellCarbon": {
+      "description": "The maximum carbon that can be in any cell.",
+      "type": "integer",
+      "default": 100,
+      "minimum": 0
+    },
+    "randomSeed": {
+      "description": "The seed used to initialize the random number generator.",
+      "type": "integer",
+      "default": null
+    },
+    "agentTimeout": {
+      "description": "Obsolete field kept for backwards compatibility, please use observation.remainingOverageTime.",
+      "type": "number",
+      "minimum": 0,
+      "default": 60
+    },
+    "treeLifespan": {
+      "description": "The maximum age of tree",
+      "type": "integer",
+      "default": 50
+    },
+    "workerLimit": {
+      "description": "The number of worker",
+      "type": "integer",
+      "default": 10
+    },
+    "absorptionRate": {
+      "description": "The absorption rate of the tree",
+      "type": "number",
+      "default": 0.02
+    },
+    "startPosOffset" : {
+      "description": "The offset of starting position",
+      "type": "integer",
+      "default": 2
+    }, 
+    "actTimeout": 1,
+    "runTimeout": 9600
+  },
+  "reward": {
+    "description": "The amount of player owned money (equal to players[index][0]) if the player has not been eliminated, else step_eliminated - episode_steps - 1.",
+    "type": "integer",
+    "default": 50
+  },
+  "observation": {
+    "carbon": {
+      "description": "Serialized list of available carbon per cell on the board.",
+      "type": "array",
+      "shared": true,
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "players": {
+      "description": "List of players and their assets.",
+      "type": "array",
+      "shared": true,
+      "items": {
+        "type": "array",
+        "items": [
+          {
+            "description": "Money: The amount player owned money (equal to reward).",
+            "type": "integer",
+            "minimum": 0
+          },
+          {
+            "description": "RecrtCenter: The position of player owned recruitment center.",
+            "type": "integer",
+            "additionalProperties": {
+              "description": "Key: uid of the asset (RecrtCenter). Value: position (row * size + column)",
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "description": "Workers: The list of player recruited workers.",
+            "type": "object",
+            "additionalProperties": {
+              "description": "Key: uid of the asset (worker).",
+              "type": "array",
+              "items": [
+                {
+                  "description": "Position: (row * size + column).",
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "description": "Collected Carbon: The amount present in a worker.",
+                  "type": "integer",
+                  "default": 0,
+                  "minimum": 0
+                },
+                {
+                  "description": "The occupation of worker",
+                  "enum": [
+                    "COLLECTOR",
+                    "PLANTOR"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "description": "Tree",
+            "type": "object",
+            "additionalProperties": {
+              "description": "Key: uid of the asset (board). Value: position (row * size + column)",
+              "type": "array",
+              "items": [
+                {
+                  "description": "Position: (row * size + column).",
+                  "type": "integer"
+                },
+                {
+                  "description": "age",
+                  "type": "integer",
+                  "default": 0,
+                  "minimum": 0
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "player": {
+      "description": "The current agent's player index.",
+      "type": "integer",
+      "defaults": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    "remainingOverageTime": 60
+  },
+  "action": {
+    "description": "Actions taken per asset (plantor or collector).",
+    "type": "object",
+    "additionalProperties": {
+      "description": "Key: uid of the asset. Value: action. RECRUIT plantor, RECRUIT collector",
+      "enum": [
+        "RECPLANTOR",
+        "RECCOLLECTOR",
+        "UP",
+        "DOWN",
+        "RIGHT",
+        "LEFT"
+      ]
+    }
+  }
+}
