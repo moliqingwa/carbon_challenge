@@ -322,8 +322,8 @@ if(!img){
   // First time setup.
   for (const imgName of [
       'chessboard', 'carbon',
-      'blue_tree', 'blue_center', 'blue_collector', 'blue_defense', 'blue_planter', 'blue_collector_tree',
-      'red_tree', 'red_center', 'red_collector', 'red_defense', 'red_planter', 'red_collector_tree',
+      'blue_tree', 'blue_center', 'blue_collector', 'blue_defense', 'blue_plantor', 'blue_collector_tree',
+      'red_tree', 'red_center', 'red_collector', 'red_defense', 'red_plantor', 'red_collector_tree',
       'left_info',  'left_avatar', 'left_name',
       'right_info', 'right_avatar', 'right_name',
       'smile', 'sad'
@@ -506,7 +506,7 @@ if(!img){
   // Draw Workers and a smaller Carbon icon according to their current cargo.
   let tree_img = [document.getElementById("blue_tree"), document.getElementById("red_tree")]
   let collector_img = [document.getElementById("blue_collector"), document.getElementById("red_collector")]
-  let planter_img = [document.getElementById("blue_planter"), document.getElementById("red_planter")]
+  let plantor_img = [document.getElementById("blue_plantor"), document.getElementById("red_plantor")]
   let recrtCenter_img = [document.getElementById("blue_center"), document.getElementById("red_center")]
   let defense_img = [document.getElementById("blue_defense"), document.getElementById("red_defense")]
   let collector_tree_img = [document.getElementById("blue_collector_tree"), document.getElementById("red_collector_tree")]
@@ -591,7 +591,7 @@ if(!img){
         fgCtx.drawImage(collector_img[playerIndex], dx, dy, ds, ds);
       } else {
         // 绘制种树员
-        fgCtx.drawImage(planter_img[playerIndex], dx, dy, ds, ds);
+        fgCtx.drawImage(plantor_img[playerIndex], dx, dy, ds, ds);
       }
     });
   }
@@ -622,7 +622,7 @@ if(!img){
   //             });
   //             // Convert to recrtCenter, Spawn worker, or Move worker.
   //             Object.entries(action).forEach(([uid, value]) => {
-  //               if (value !== "RECPLANTER" && value !== "RECCOLLECTOR") {
+  //               if (value !== "RECPLANTOR" && value !== "RECCOLLECTOR") {
   //                 const toPos = getMovePos(workers[uid][0], value);
   //                 if (board[toPos].worker !== uid) board[toPos].collision = true;
   //               }
@@ -818,7 +818,7 @@ if(!img){
   }
 
   const getPlayerInfo = (player) => {
-    const planterStr = "PLANTER"; 
+    const planterStr = "PLANTOR"; 
     const collectorStr = "COLLECTOR";
     let treePlanter = 0;
     let carbonCatcher = 0;

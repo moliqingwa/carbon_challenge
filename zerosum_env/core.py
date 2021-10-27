@@ -400,26 +400,9 @@ class Environment:
             self.step(actions, logs)
             advance()
             agent = self.__get_shared_state(position)
-            reward = {"reward": agent.reward}
-            if len(self.steps) > 1:
-                if reward["reward"] is not None:
-                    reward["reward"] -= self.steps[-2][position].reward
-
-                current_player = agent.observation["players"][position]
-                last_player = self.steps[-2][0]["observation"]["players"][position]
-                for worker_id, worker in current_player[2].items():
-                    reward[worker_id] = 0
-                    if worker_id in last_player[2]:
-                        if worker[2] == "COLLECTOR":
-                            reward[worker_id] = round(worker[1] - last_player[2][worker_id][1],2)
-                        elif worker[2] == "PLANTER":
-                            trees_dict = agent.observation["trees"]
-
-                            for tree_id, tree_worker in trees_dict.items():
-                                if worker_id == tree_worker[0]:
-                                    reward[worker_id] += tree_worker[1]
-                            reward[worker_id] = round(reward[worker_id], 2)
-
+            reward = agent.reward
+            if len(self.steps) > 1 and reward is not None:
+                reward -= self.steps[-2][position].reward
             return [
                 agent.observation, reward, agent.status != "ACTIVE", agent.info
             ]
@@ -600,7 +583,7 @@ class Environment:
                 f"{len(states)} is not a valid number of agent(s).")
 
         self.states = structify([self.__get_state(index, s)
-                                 for index, s in enumerate(states)])
+                                for index, s in enumerate(states)])
         self.steps = [self.states]
 
         return self.states

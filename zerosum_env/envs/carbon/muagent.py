@@ -123,9 +123,9 @@ class Agent():
         self.calCellValue()
         log("average:{0} round:{1} cash:{2}\n".format(self.averageC, self.round, self._board.current_player.cash))
 
-        log("planter:\n")
-        for planter in self._board.planters.values():
-            log("{0} {1} {2} {3} \n".format(planter.id, planter.occupation, planter.carbon, planter.position))
+        log("plantor:\n")
+        for plantor in self._board.plantors.values():
+            log("{0} {1} {2} {3} \n".format(plantor.id, plantor.occupation, plantor.carbon, plantor.position))
         log("collector:\n")
         for collector in self._board.collectors.values():
             log("{0} {1} {2} {3} \n".format(collector.id, collector.occupation, collector.carbon, collector.position))
@@ -422,7 +422,7 @@ class Agent():
                 # if worker.occupation == Occupation.COLLECTOR and self.lastPostion[worker.id] != None and self._board.cells[self.lastPostion[worker.id]].carbon < self.averageC:
                 #     actions = self.removeActionForPosition(actions, worker, self.lastPostion[worker.id])
                 if self.lastPostion[worker.id] is not None:
-                    if worker.occupation == Occupation.PLANTER or (worker.occupation == Occupation.COLLECTOR and self.lastPostion[worker.id] != worker.position):
+                    if worker.occupation == Occupation.PLANTOR or (worker.occupation == Occupation.COLLECTOR and self.lastPostion[worker.id] != worker.position):
                         actions = self.removeActionForPosition(actions, worker, self.lastPostion[worker.id])
                         print(27)
                 print(2,actions)
@@ -490,7 +490,7 @@ class Agent():
                 print(12)
                 continue
 
-            if worker.occupation == Occupation.PLANTER:
+            if worker.occupation == Occupation.PLANTOR:
                 print(13, actions)
                 print(131, worker.position)
                 self.setWorkerAction(worker, self.calPlantAction(worker, actions))
@@ -527,8 +527,8 @@ class Agent():
         if len(me.collectors) < 2 and me.cash >= 30:
             me.recrtCenters[0].next_action = RecrtCenterAction.RECCOLLECTOR
             print(21)
-        elif len(me.planters) < 2 and me.cash >= 30:
-            me.recrtCenters[0].next_action = RecrtCenterAction.RECPLANTER
+        elif len(me.plantors) < 2 and me.cash >= 30:
+            me.recrtCenters[0].next_action = RecrtCenterAction.RECPLANTOR
             print(22)
         print(99)
 
@@ -632,7 +632,7 @@ class Agent():
                 continue
 
             if otherWorker.occupation == Occupation.COLLECTOR:
-                if worker.occupation == Occupation.PLANTER:
+                if worker.occupation == Occupation.PLANTOR:
                     ignoreOpponent = True
                     continue
                 if worker.occupation == Occupation.COLLECTOR and worker.carbon < otherWorker.carbon:
@@ -762,7 +762,7 @@ def mu_agent(board):
 #
 # # 获取自身种树员信息
 # print("获取自身种树员信息")
-# for worker in me.planters:
+# for worker in me.plantors:
 #     print(worker.id, worker.occupation, worker.carbon, worker.position)
 #
 # # 获取自身转化中心信息
@@ -777,8 +777,8 @@ def mu_agent(board):
 #
 # # 获取所有种树员信息
 # print("获取所有种树员信息")
-# for planter in board.planters.values():
-#     print(planter.id, planter.occupation, planter.carbon, planter.position)
+# for plantor in board.plantors.values():
+#     print(plantor.id, plantor.occupation, plantor.carbon, plantor.position)
 #
 # # 获取所有捕碳员信息
 # print("获取所有捕碳员信息")

@@ -562,7 +562,7 @@
               });
               // Convert to recrtCenter, Spawn worker, or Move worker.
               Object.entries(action).forEach(([uid, value]) => {
-                if (value !== "RECPLANTER" && value !== "RECCOLLECTOR") {
+                if (value !== "RECPLANTOR" && value !== "RECCOLLECTOR") {
                   const toPos = getMovePos(workers[uid][0], value);
                   if (board[toPos].worker !== uid) board[toPos].collision = true;
                 }

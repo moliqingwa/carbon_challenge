@@ -78,9 +78,9 @@ def random_agent(board):
             remaining_carbon -= board.configuration.rec_collector_cost
             recrtCenter.next_action = RecrtCenterAction.RECCOLLECTOR
         # 20% chance to spawn if no workers
-        elif randint(0, 4) == 0 and remaining_carbon > board.configuration.rec_planter_cost:
-            remaining_carbon -= board.configuration.rec_planter_cost
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
+        elif randint(0, 4) == 0 and remaining_carbon > board.configuration.rec_plantor_cost:
+            remaining_carbon -= board.configuration.rec_plantor_cost
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
 
 
 @board_agent
@@ -109,7 +109,7 @@ def my_agent(board):
 
     # 给自身所有基地下达招募种树员的指令
     for recrtCenter in me.recrtCenters:
-        recrtCenter.next_action = RecrtCenterAction.RECPLANTER
+        recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
 
 
 @board_agent
@@ -122,7 +122,7 @@ def other_agent(board):
                 if randint(0, 2) == 1:
                     recrtCenter.next_action = RecrtCenterAction.RECCOLLECTOR
                 else:
-                    recrtCenter.next_action = RecrtCenterAction.RECPLANTER
+                    recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
 
     else:
         for worker in me.workers:
@@ -132,7 +132,7 @@ def other_agent(board):
 @board_agent
 def terminal_agent(board):
     print("current step: ", board.step, ";")
-    print("KeyInput: U-UP, D-DOWN, L-LEFT, R-RIGHT, P-RECPLANTER, C-RECCOLLECTOR, other-None")
+    print("KeyInput: U-UP, D-DOWN, L-LEFT, R-RIGHT, P-RECPLANTOR, C-RECCOLLECTOR, other-None")
 
     size = board.configuration.size
     result = ''
@@ -168,7 +168,7 @@ def terminal_agent(board):
         'R': WorkerAction.RIGHT
     }
     rec_switch = {
-        'P': RecrtCenterAction.RECPLANTER,
+        'P': RecrtCenterAction.RECPLANTOR,
         'C': RecrtCenterAction.RECCOLLECTOR,
     }
     me = board.current_player
@@ -212,8 +212,7 @@ def populate_board(state, env):
         grid[randint(0, half - 1)][randint(0, half - 1)] = i ** 2
 
         # as well as a particular distribution weighted toward the center of the map
-        grid[randint(half // 2, half - 1)
-        ][randint(half // 2, half - 1)] = i ** 2
+        grid[randint(half // 2, half - 1)][randint(half // 2, half - 1)] = i ** 2
 
     # Spread the seeds radially.
     radius_grid = copy.deepcopy(grid)
@@ -265,11 +264,8 @@ def populate_board(state, env):
     elif num_agents == 2:
         # starting_positions[0] = size * (size // 2) + size // 4
         # starting_positions[1] = size * (size // 2) + math.ceil(3 * size / 4) - 1
-        starting_positions[0] = size * \
-                                (size // 4 + config.startPosOffset) + \
-                                size // 4 + config.startPosOffset
-        starting_positions[1] = size * (3 * size // 4 - config.startPosOffset) + \
-                                3 * size // 4 - config.startPosOffset
+        starting_positions[0] = size * (size // 4 + config.startPosOffset) + size // 4 + config.startPosOffset
+        starting_positions[1] = size * (3 * size // 4 - config.startPosOffset) + 3 * size // 4 - config.startPosOffset
         obs.carbon[starting_positions[0]] = 0
         obs.carbon[starting_positions[1]] = 0
     elif num_agents == 4:
@@ -286,8 +282,6 @@ def populate_board(state, env):
         recrtCenter = {new_recrtCenter_id(i): starting_positions[i]}
         # tree = {new_tree_id(i): starting_positions[i]+3}
         obs.players.append([state[0].reward, recrtCenter, {}, {}])
-
-    obs.trees = {}
 
     return state
 
@@ -315,11 +309,11 @@ def interpreter(state, env):
                 _, _, worker_type = worker
                 if worker_type == str(Occupation.COLLECTOR):
                     collector.append(worker)
-                if worker_type == str(Occupation.PLANTER):
+                if worker_type == str(Occupation.PLANTOR):
                     planter.append(worker)
             # 无捕碳员 且无种树员 且无树 且（无转化中心 或（玩家金额不足以 招募捕碳员 或 招募种树员且种一棵树 ））
             if len(workers) == 0 and len(trees) == 0 and (
-                    len(recrtCenters) == 0 or player_cash < min(config.recCollectorCost, config.recPlanterCost)):
+                    len(recrtCenters) == 0 or player_cash < min(config.recCollectorCost, config.recPlantorCost)):
                 # Agent can no longer gather any cash
                 agent.status = "DONE"
                 agent.reward = board.step - board.configuration.episode_steps - 1
@@ -367,25 +361,24 @@ def renderer(state, env):
 
     out = row_divider
     for row in range(size):
-
-        for col in range(size):
-            carbon, recrtCenter, _, _, _, _, _ = board[col + row * size]
-            if recrtCenter > -1:
-                out += col_divider + f"R{recrtCenter}".rjust(4)
-            else:
-                out += col_divider + str(min(int(carbon), 9999)).rjust(4)
-        out += col_divider + "\n"
         for col in range(size):
             _, _, worker, worker_carbon, worker_type, _, _ = board[col + row * size]
             out += col_divider + (
                 f"{min(int(worker_carbon), 99)}{worker_type[0]}{worker}" if worker > -1 else ""
-            ).rjust(4)
+            ).ljust(4)
+        out += col_divider + "\n"
+        for col in range(size):
+            carbon, recrtCenter, _, _, _, _, _ = board[col + row * size]
+            if recrtCenter > -1:
+                out += col_divider + f"R{recrtCenter}".ljust(4)
+            else:
+                out += col_divider + str(min(int(carbon), 9999)).rjust(4)
         out += col_divider + "\n"
         for col in range(size):
             _, _, _, _, _, tree, tree_lifecycle = board[col + row * size]
             out += col_divider + (
                 f"{tree_lifecycle}T{tree}" if tree > -1 else ""
-            ).rjust(4)
+            ).ljust(4)
         out += col_divider + "\n" + row_divider
     print(out)
     return out
