@@ -30,9 +30,10 @@ HALF_MAP_SIZE = MAP_SIZE // 2
 ROWS = MAP_SIZE
 COLS = MAP_SIZE
 
-MAX_Plater = 4
-MAX_Collector = 5
-
+MAX_Plater = 4                  # 植树员
+MAX_Collector_Tree = 4          # 收树员
+MAX_Collector_Carbon = 2        # 攻击
+Tree_absorption_rate = 0.02     # 树吸收效率
 
 # 玩家个数
 PLAYERS = 2
@@ -282,9 +283,9 @@ class TankTank():
         self.player_id = player_id
         self.verbose = verbose
         self.scores = np.zeros((N_SCORE_TYPES, ROWS, COLS), dtype=np.float32)
-        self.collec_tree = []
-        self.collec_collec = []
-        self.planter_list = []
+        self.collec_tree = [None] * MAX_Collector_Tree
+        self.collec_collec = [None] * MAX_Collector_Carbon
+        self.planter_list = [None] * MAX_Plater
         self.opponent_player = {}
         self.board = None
         self.log_step = -1
@@ -326,7 +327,7 @@ class TankTank():
                     continue
                 if self.board.cells[pX, pY].tree_id is not None:
                     t_count += 1
-        return self.board.cells[x, y].carbon * 0.05 / t_count
+        return self.board.cells[x, y].carbon * Tree_absorption_rate / t_count
 
     def update_score_D89(self, x, y):
         sum8 = 0
@@ -336,10 +337,10 @@ class TankTank():
                 pX = (x + XX[i] + 15) % 15
                 pY = (y + YY[j] + 15) % 15
                 if(i == 1 and j == 1):
-                    sum9 += self.cup_cell_carbon(pX, pY, [x, y])
+                    sum9 += self.board.cells[pX, pY].carbon
                     continue
                 sum8 += self.cup_cell_carbon(pX, pY, [x, y])
-                sum9 += self.cup_cell_carbon(pX, pY, [x, y])
+                sum9 += self.board.cells[pX, pY].carbon
         return sum8, sum9
 
     def update_score(self):
@@ -347,7 +348,8 @@ class TankTank():
         self.scores[I_SCORE_HALITE_D8:, ...] = 0.0
         self.scores_D8 = []
         self.scores_D9 = []
-
+        self.scores_D1 = []
+        self.Go_back = False
         for x in range(COLS):
             for y in range(ROWS):
                 if self.board.cells[x, y].recrtCenter_id is not None:
@@ -360,21 +362,40 @@ class TankTank():
                 self.scores[I_SCORE_HALITE_D9, i, j] = d9
                 self.scores_D8.append([self.scores[I_SCORE_HALITE_D8, i,
                                                    j], i, j])
+                self.scores_D9.append(
+                    [self.scores[I_SCORE_HALITE_D9, i, j], i, j])
+
+                self.scores_D1.append([self.scores[I_SCORE_HALITE, i,
+                                                   j], i, j])
         self.scores_D8 = sorted(
             self.scores_D8, key=itemgetter(0), reverse=True)
-
+        self.scores_D9 = sorted(
+            self.scores_D9, key=itemgetter(0), reverse=True)
+        self.scores_D1 = sorted(
+            self.scores_D1, key=itemgetter(0), reverse=True)
         self.log(
             f'地图资源 scores_D8->  = {self.scores_D8}')
         self.world_halite = np.sum(self.scores[I_SCORE_HALITE])
         self.halite_per_ship = self.world_halite / \
             max(1, len(self.board.workers))
 
-        for d in self.collec_tree:
-            if(d not in self.board.workers.keys()):
-                self.collec_tree.remove(d)
-        for d in self.collec_collec:
-            if(d not in self.board.workers.keys()):
-                self.collec_collec.remove(d)
+        self.log(f'世界地图资源总量：{self.world_halite} 平均捕获量：{self.halite_per_ship} ')
+
+        for d in range(len(self.collec_tree)):
+            if(self.collec_tree[d] not in self.board.workers.keys()):
+                self.collec_tree[d] = None
+
+        for d in range(len(self.collec_collec)):
+            if(self.collec_collec[d] not in self.board.workers.keys()):
+                self.collec_collec[d] = None
+
+        for worker in self.board.current_player.collectors:
+            if worker.id not in self.collec_tree and None in self.collec_tree:
+                i = self.collec_tree.index(None)
+                self.collec_tree[i] = worker.id
+            elif worker.id not in self.collec_collec and None in self.collec_collec:
+                i = self.collec_collec.index(None)
+                self.collec_collec[i] = worker.id
 
         for recrtCenter in self.board.recrtCenters.values():
             if recrtCenter not in self.board.current_player.recrtCenters:
@@ -384,13 +405,14 @@ class TankTank():
             if play.id != self.board.current_player.id:
                 self.opponent_player['player'] = play
 
-        for p in self.board.current_player.plantors:
-            if p.id not in self.planter_list:
-                self.planter_list.append(p.id)
+        for p in range(len(self.planter_list)):
+            if self.planter_list[p] not in self.board.workers.keys():
+                self.planter_list[p] = None
 
-        for p in self.planter_list:
-            if p not in self.board.workers.keys():
-                self.planter_list.remove(p)
+        for p in self.board.current_player.planters:
+            if p.id not in self.planter_list:
+                i = self.planter_list.index(None)
+                self.planter_list[i] = p.id
 
         # 初始化可以攻击的捕碳员列表
         self.collectorList = []
@@ -407,23 +429,34 @@ class TankTank():
         """
         有30万金币且转化中心没有自己的工作人员，方可继续。
         """
+        p0 = recrtCenter.position
         if self.free_carbon >= 30:
             if self.board.cells[recrtCenter.position].worker_id not in self.board.current_player.worker_ids:
-                if(self.free_carbon >= 50 and (self.len_collectors + self.len_plantors) == 0):
-                    if(self.board.step < 292):
-                        recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
-                    else:
-                        pass
-                    pass
-                else:
-                    if self.len_plantors < MAX_Plater:
-                        if(self.free_carbon >= 50 and self.board.step < 292):
-                            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
-                            return
-                    if self.len_collectors < MAX_Collector:
-                        if(self.free_carbon >= 30):
-                            # recrtCenter.next_action = RecrtCenterAction.RECCOLLECTOR
-                            pass
+                # if(self.free_carbon >= 50 and (self.len_collectors + self.len_plantors) == 0):
+                #     if(self.board.step < 292):
+                #         recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+                #     else:
+                #         pass
+                #     pass
+                # else:
+                if self.len_collectors < 2:
+                    if(self.free_carbon >= 30):
+                        recrtCenter.next_action = RecrtCenterAction.RECCOLLECTOR
+                        self.target_position.append(p0)
+                        self.danger_position.append(p0)
+                        return
+                if self.len_planters < MAX_Plater:
+                    if(self.free_carbon >= 50 and self.board.step < 292):
+                        recrtCenter.next_action = RecrtCenterAction.RECPLANTER
+                        self.target_position.append(p0)
+                        self.danger_position.append(p0)
+                        return
+                elif self.len_collectors < MAX_Collector_Tree:
+                    if(self.free_carbon >= 30):
+                        recrtCenter.next_action = RecrtCenterAction.RECCOLLECTOR
+                        self.target_position.append(p0)
+                        self.danger_position.append(p0)
+                        return
             else:
                 # 有飞船在基地挂机
                 pass
@@ -456,14 +489,24 @@ class TankTank():
     def distenceP0_P1(self, p0, p1):
         return distance_impl(p0[0], p1[0], p0[1], p1[1])
 
-    def isSound(self, type, x, y):
+    def isSound(self, type, x, y, dis):
         for i in range(5):
             for j in range(5):
                 sx = (x + SX[i] + 15) % 15
                 sy = (y + SY[j] + 15) % 15
-                if type == "tree" and self.board.cells[sx, sy].tree_id in self.board.current_player.tree_ids:
+                if type == "tree" and self.board.cells[sx, sy].tree_id is not None and self.board.cells[sx, sy].tree_id in self.board.current_player.tree_ids and (50-self.board.cells[sx, sy].tree.age) > dis:
                     return False
                 pass
+        return True
+
+    def isSound_other_tree(self, position):
+        """判断周围是否有对手树木"""
+        pass
+
+    def less_tree(self, position):
+        for n in self.target_position:
+            if distance_impl(position[0], n[0], position[1], n[1]) < 3:
+                return False
         return True
 
     def distenceD_D(self, md, x, y):
@@ -479,10 +522,10 @@ class TankTank():
                     distence = xyd
         return md[d][1][0], md[d][1][1]
 
-    def putindex(self, worker, x, y):
-        id = self.planter_list.index(worker.id)
+    def putindex(self, worker, x, y, lis):
+        id = lis.index(worker.id)
         r1 = self.board.current_player.recrtCenters[0].position
-        if(id < 4):
+        if(id < 8):
             if(r1[0] < 7):
                 if r1[1] < 7:
                     id = (id + 2) % 4
@@ -495,76 +538,298 @@ class TankTank():
                 else:
                     id = (id + 0) % 4
         if(id == 0):
-            if x > 7 and y >= 7:
+            if x >= 7 and y >= 7:
                 return True
             else:
                 return False
         elif id == 1:
-            if x <= 7 and y > 7:
+            if x <= 7 and y >= 7:
                 return True
             else:
                 return False
         elif id == 2:
-            if x < 7 and y <= 7:
+            if x <= 7 and y <= 7:
                 return True
             else:
                 return False
         elif id == 3:
-            if x >= 7 and y < 7:
+            if x >= 7 and y <= 7:
                 return True
             else:
                 return False
         else:
             return True
 
-    def plantor_strategy(self):
-        for worker in self.board.current_player.plantors:
+    def neighbor_cells(self, cell):
+        cells = [cell]
+        cells.append(cell.up)
+        cells.append(cell.right)
+        cells.append(cell.down)
+        cells.append(cell.left)
+        return cells
+
+    def prevent_attach(self, worked, next_move):
+        """防止撞击"""
+        nextPosition = calculate_next_position(worked.position, next_move)
+        if self.Go_back and nextPosition == self.board.current_player.recrtCenters[0].position:
+            return True
+        self.log(
+            f'danger_position = {self.danger_position} nextPosition = {nextPosition}')
+        if nextPosition not in self.danger_position:
+            cells = self.neighbor_cells(self.board.cells[nextPosition])
+            for cell in cells:
+                if(cell.position == worked.position):
+                    continue
+                self.log(f'cell.worker_id = {cell.worker_id}')
+                if(cell.worker_id is not None and cell.worker_id not in self.board.current_player.worker_ids):
+                    if(self.board.workers[cell.worker_id].carbon > 100):
+                        if(cells[0].tree_id is not None):
+                            if(cells[0].tree_id in self.board.current_player.tree_ids):
+                                self.danger_position.append(nextPosition)
+                                return True
+                            else:
+                                return False
+                        else:
+                            self.danger_position.append(nextPosition)
+                            return True
+                    else:
+                        return False
+            self.danger_position.append(nextPosition)
+            return True
+        else:
+            return False
+
+    def rever_work(self, worker, q):
+        """处理worker动作"""
+        for action in np.argsort(-q):
+            if self.prevent_attach(worker, action):
+                worker.next_action = MOVE[action]
+                return
+        pass
+
+    def random_position(self, worker, lis):
+        id = lis.index(worker.id)
+        r1 = self.board.current_player.recrtCenters[0].position
+        if(id < 8):
+            if(r1[0] < 7):
+                if r1[1] < 7:
+                    id = (id + 2) % 4
+                else:
+                    id = (id + 1) % 4
+                pass
+            else:
+                if r1[1] < 7:
+                    id = (id + 3) % 4
+                else:
+                    id = (id + 0) % 4
+        if(id == 0):
+            return 10, 10
+        elif id == 1:
+            return 4, 10
+        elif id == 2:
+            return 4, 4
+        elif id == 3:
+            return 10, 4
+        else:
+            return 7, 7
+
+    def ranom_next_move(self, worker):
+        p0 = worker.position
+        p1 = worker.position if p0 != self.board.current_player.recrtCenters[0].position else Point(
+            p0.x - 1, p0.y - 1)
+        q = preference_move_to(p0, p1)
+        self.target_position.append(p1)
+        self.rever_work(worker, q)
+        self.log(
+            f'{worker.id} 当前位置={ p0 }目标位置={ p0 } ')
+        print(q)
+        pass
+
+    def planter_strategy(self):
+        for worker in self.board.current_player.planters:
             """植树策略"""
             p0 = worker.position
             if self.now_position_tree(p0):
                 worker.next_action = MOVE[0]
                 continue
             md4 = []
-            od = []
-            max_carbon = self.scores_D8[len(
-                self.board.current_player.plantors)][0]
+            mmm = 5
             for d in self.scores_D8:
                 dis = self.distenceP0_P1(p0, [d[1], d[2]])
-                disR_8 = self.distenceP0_P1(
-                    self.board.current_player.recrtCenters[0].position, [d[1], d[2]])
-                if (len(self.board.current_player.trees) == 0 and disR_8 > 7):
-                    continue
-                elif len(self.board.current_player.trees) > 0 and (d[0] * (1.05) ** dis) < 8:
-                    continue
+                if (len(self.board.current_player.trees) == 0):
+                    # if disR_8 > 7:
+                    #     continue
+                    mmm = 5
+                else:
+                    mmm = 0.7
+
+                # and (d[0] * (1.05) ** dis) < 8
+                # elif len(self.board.current_player.trees) > 0:
+                #     continue
                 x, y = ij_to_position(d[1], d[2])
                 # self.board.cells[Point(x, y)].tree_id is None and
-                if self.isSound('tree', x, y):
+                if self.isSound('tree', x, y, dis) and self.less_tree(Point(x, y)):
                     # 当前单元格没有树，且周围也没有自己的树
-                    if len(md4) < 5 and self.putindex(worker, x, y):
+                    if d[0] > mmm and self.putindex(worker, x, y, self.planter_list):
                         md4.append([0, [x, y]])
-                elif self.board.cells[Point(x, y)].tree_id is not None and self.board.cells[Point(x, y)].tree_id not in self.board.current_player.tree_ids:
+                # elif self.board.cells[Point(x, y)].tree_id is not None and self.board.cells[Point(x, y)].tree_id not in self.board.current_player.tree_ids:
                     # 当前单元格有树且不是自己的树
                     pass
             if len(md4) > 0:
-                self.log(
-                    f'飞船 {worker.id,self.planter_list.index(worker.id),md4} ')
-                mx, my = self.distenceD_D(md4, p0[0], p0[1])
-                p1 = Point(mx, my)
-                self.target_position.append([mx, my])
-                q = preference_move_to(p0, p1)
-                action = np.argmax(q)
-                worker.next_action = MOVE[action]
-                self.log(
-                    f'{worker.id} 当前位置={ p0 }目标位置={ p1 } next_action = {MOVE[action]}')
+                if self.free_carbon < 50 and self.board.cells[p0].tree_id is not None:
+                    self.ranom_next_move(worker)
+                else:
+                    self.log(
+                        f'飞船 {worker.id,self.planter_list.index(worker.id),md4} ')
+                    mx, my = self.distenceD_D(md4, p0[0], p0[1])
+                    p1 = Point(mx, my)
+                    self.target_position.append([mx, my])
+                    q = preference_move_to(p0, p1)
+                    # action = np.argmax(q)
+                    # worker.next_action = MOVE[action]
+                    self.rever_work(worker, q)
+                    self.log(
+                        f'{worker.id} 当前位置={ p0 }目标位置={ p1 } ')
             else:
-                pass
+                self.ranom_next_move(worker)
+
+    def statistics_trees(self, worker, position, away=15, carbon=40):
+        collect_trees = []
+        for tree in self.board.trees.values():
+            if tree.player_id != self.board.current_player.id and tree.position not in self.target_position:
+                worker_2_Tree = self.distenceP0_P1(position, tree.position)
+                age = min(300-self.board.step, 50 - tree.age - worker_2_Tree-1)
+                i, j = position_to_ij(tree.position)
+                self.log(
+                    f'树点--->年龄 {tree.age} 位置 {tree.position, age, self.scores[I_SCORE_HALITE_D8, i, j]} worker_2_Tree {worker_2_Tree}')
+                if age * self.scores[I_SCORE_HALITE_D8, i, j] > carbon and worker_2_Tree <= away and self.putindex(worker, tree.position[0], tree.position[1], self.collec_tree):
+                    collect_trees.append(
+                        [age * self.scores[I_SCORE_HALITE_D8, i, j], tree.position])
+        return collect_trees
+
+    def collector_carbon_strategy(self, collector):
+        """收集二氧化碳"""
+        p0 = collector.position
+        p1 = None
+        if self.board.cells[collector.position].carbon > 10:
+            self.ranom_next_move(collector)
+            return
+
+        if len(self.board.current_player.collectors) == 1 and collector.carbon + self.free_carbon > 30 and collector.carbon != 0:
+            p1 = self.board.current_player.recrtCenters[0].position
+        elif len(self.board.current_player.trees) == 0 and collector.carbon + self.free_carbon > 100 and collector.carbon != 0:
+            p1 = self.board.current_player.recrtCenters[0].position
+        elif collector.carbon > 100:
+            p1 = self.board.current_player.recrtCenters[0].position
+        else:
+            md = []
+            for d in self.scores_D1:
+                x, y = ij_to_position(d[1], d[2])
+                if d[0] > 5:
+                    md.append([0, [x, y]])
+            mx, my = self.distenceD_D(md, p0[0], p0[1])
+            p1 = Point(mx, my)
+        q = preference_move_to(p0, p1)
+        # action = np.argmax(q)
+        # collertor.next_action = MOVE[action]
+
+        self.target_position.append(p1)
+        self.rever_work(collector, q)
+        # self.collec_tree.append(collertor.id)
+        self.log(
+            f'捕碳员={ collector.id }当前位置={ p0 }目标位置={ p1 } next_action = {collector.next_action}')
+        pass
+
+    def collector_tree_strategy(self, collertor):
+        """收树策略"""
+        # if self.board.cells[collertor.position].carbon >= 40:
+        #     collertor.next_action = MOVE[0]
+        #     return
+
+        if collertor.carbon > self.halite_per_ship:
+            self.collector_carbon_strategy(collertor)
+            return
+
+        p0 = collertor.position
+        collect_trees = sorted(self.statistics_trees(collertor,
+                                                     p0), key=itemgetter(0), reverse=True)
+        self.log(f'转换树捕碳员={ collect_trees }')
+        if len(collect_trees) > 0:
+            le = 4 if len(collect_trees) > 4 else len(collect_trees)
+            mx, my = self.distenceD_D(collect_trees[0:le], p0[0], p0[1])
+            p1 = Point(mx, my)
+            q = preference_move_to(p0, p1)
+            # action = np.argmax(q)
+            # collertor.next_action = MOVE[action]
+
+            self.target_position.append(p1)
+            self.rever_work(collertor, q)
+            # self.collec_tree.append(collertor.id)
+            self.log(
+                f'种树人={ collertor.id }当前位置={ p0 }目标位置={ p1 } next_action = {collertor.next_action}')
+        else:
+            md = []
+            for d in self.scores_D1:
+                if d[0] > 5:
+                    x, y = ij_to_position(d[1], d[2])
+                    md.append([0, [x, y]])
+            if len(md) > 0:
+                mx, my = self.distenceD_D(md, p0[0], p0[1])
+                p1 = Point(mx, my)
+                q = preference_move_to(p0, p1)
+                # action = np.argmax(q)
+                # collertor.next_action = MOVE[action]
+
+                self.target_position.append(p1)
+                self.rever_work(collertor, q)
+                # self.collec_tree.append(collertor.id)
+                self.log(
+                    f'捕碳员={ collertor.id }当前位置={ p0 }目标位置={ p1 } next_action = {collertor.next_action}')
+                return
+
+            if collertor.carbon > self.halite_per_ship:
+                self.collector_carbon_strategy(collertor)
+            elif self.putindex(collertor, p0[0], p0[1], self.collec_tree):
+                self.ranom_next_move(collertor)
+            else:
+                mx, my = self.random_position(collertor, self.collec_tree)
+                p1 = Point(mx, my)
+                q = preference_move_to(p0, p1)
+                # action = np.argmax(q)
+                # collertor.next_action = MOVE[action]
+
+                self.target_position.append(p1)
+                self.rever_work(collertor, q)
+                # self.collec_tree.append(collertor.id)
+                self.log(
+                    f'捕碳员={ collertor.id }当前位置={ p0 }目标位置={ p1 } next_action = {collertor.next_action}')
+            pass
+        pass
+
+    def collector_attach_strategy(self, collector):
+        """攻击飞船"""
+        pass
+
+    def collec_GoBack(self, collector):
+        p0 = collector.position
+        p1 = self.board.current_player.recrtCenters[0].position
+        q = preference_move_to(p0, p1)
+        # action = np.argmax(q)
+        # collertor.next_action = MOVE[action]
+
+        self.target_position.append(p1)
+        self.rever_work(collector, q)
+        # self.collec_tree.append(collertor.id)
+        self.log(
+            f'捕碳员={ collector.id }当前位置={ p0 }目标位置={ p1 } next_action = {collector.next_action}')
+        pass
 
     def __call__(self, board):
         self.board = board
         assert self.board.current_player.id == self.player_id
 
         self.current_recrtCenters = self.board.current_player.recrtCenters
-        self.len_plantors = len(self.board.current_player.plantors)
+        self.len_planters = len(self.board.current_player.planters)
         self.len_collectors = len(self.board.current_player.collectors)
         self.target_position = []  # 目标位置
         self.danger_position = []  # 下一步位置
@@ -577,31 +842,34 @@ class TankTank():
         for recrtCenter in self.current_recrtCenters:
             self.recrtCenter_strategy(recrtCenter)
 
-        if self.board.step > 25:
+        # if self.board.step > 25:
             # 处理种树人
-            self.plantor_strategy()
+        self.planter_strategy()
 
         # 处理捕CO2员
-        # for coll in self.sorted_collectors:
-
-        #     if self.free_carbon < 20 and len(self.board.current_player.trees) == 0:
-        #         self.log(
-        #             f'{ coll.id } coll-CO2-1-->当前位置={ coll.position }')
-        #         self.collector_carbon_strategy(coll)
-        #         continue
-        #     if (len(self.collec_tree) == 0 and len(self.opponent_player['player'].trees) > 0 and coll.id not in self.collec_collec) or coll.id in self.collec_tree:
-        #         self.log(
-        #             f'飞船={ coll.id } 收集树-->当前位置={ coll.position }')
-        #         self.collector_tree_strategy(coll)
-        #     elif (len(self.collec_collec) < 2) or coll.id in self.collec_collec:
-        #         self.log(
-        #             f'飞船={ coll.id } 攻击目标-->当前位置={ coll.position }')
-        #         self.collector_attach_strategy(coll)
-        #     else:
-        #         self.log(
-        #             f'飞船={ coll.id } 收集二氧化碳2-->当前位置={ coll.position }')
-        #         self.collector_carbon_strategy(coll)
-        # return self.board.current_player.next_actions
+        for coll in self.board.current_player.collectors:
+            if coll.carbon > 0 and self.board.step > 283:
+                self.Go_back = True
+                self.collec_GoBack(coll)
+                continue
+            if self.free_carbon < 200:
+                self.log(
+                    f'飞船={ coll.id } coll-CO2-1-->当前位置={ coll.position }')
+                self.collector_carbon_strategy(coll)
+                continue
+            if coll.id in self.collec_tree:
+                self.log(
+                    f'飞船={ coll.id } 收集树-->当前位置={ coll.position }')
+                self.collector_tree_strategy(coll)
+            elif coll.id in self.collec_collec:
+                self.log(
+                    f'飞船={ coll.id } 攻击目标-->当前位置={ coll.position }')
+                self.collector_attach_strategy(coll)
+            else:
+                self.log(
+                    f'飞船={ coll.id } coll-CO2-2-->当前位置={ coll.position }')
+                self.collector_carbon_strategy(coll)
+        return self.board.current_player.next_actions
 
 
 class MyAgent(object):
@@ -764,16 +1032,16 @@ class MyAgent(object):
         """
         if self.free_carbon >= 30:
             if self.board.cells[recrtCenter.position[0], recrtCenter.position[1]].worker_id not in self.board.current_player.worker_ids:
-                if((self.len_collectors + self.len_plantors) == 0):
+                if((self.len_collectors + self.len_planters) == 0):
                     if(self.guss_tree_corban_get()):
-                        recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+                        recrtCenter.next_action = RecrtCenterAction.RECPLANTER
                     else:
                         pass
                     pass
                 else:
-                    if self.len_plantors < MAX_Plater:
+                    if self.len_planters < MAX_Plater:
                         if(self.free_carbon >= 50 and self.guss_tree_corban_get()):
-                            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+                            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
                             return
                         else:
                             pass
@@ -865,8 +1133,8 @@ class MyAgent(object):
         else:
             return self.recrtCenter_1234(p0, x)
 
-    def plantor_strategy(self):
-        for worker in self.board.current_player.plantors:
+    def planter_strategy(self):
+        for worker in self.board.current_player.planters:
             """植树策略"""
             p0 = worker.position
             if self.now_position_tree(p0):
@@ -878,7 +1146,7 @@ class MyAgent(object):
             md4 = []
             od = []
             max_carbon = self.scores_D8[len(
-                self.board.current_player.plantors)][0]
+                self.board.current_player.planters)][0]
             for d in self.scores_D8:
                 dis = self.distenceP0_P1(p0, [d[1], d[2]])
                 disR_8 = self.distenceP0_P1(
@@ -1068,7 +1336,7 @@ class MyAgent(object):
         assert self.board.current_player.id == self.player_id
         self.recrtCenters = self.board.current_player.recrtCenters
 
-        self.len_plantors = len(self.board.current_player.plantors)
+        self.len_planters = len(self.board.current_player.planters)
         self.len_collectors = len(self.board.current_player.collectors)
         self.determined_ships = []
         self.target_position = []  # 目标位置
@@ -1097,7 +1365,7 @@ class MyAgent(object):
             self.recrtCenter_strategy(recrtCenter)
 
         # 处理种树人
-        self.plantor_strategy()
+        self.planter_strategy()
 
         # 处理捕CO2员
         for coll in self.sorted_collectors:

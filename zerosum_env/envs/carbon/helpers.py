@@ -41,6 +41,11 @@ class Observation(zerosum_env.helpers.Observation):
         return self["players"]
 
     @property
+    def trees(self) -> Dict[int, List[int]]:
+        """List of players and their assets."""
+        return self["trees"]
+
+    @property
     def player(self) -> int:
         """The current agent's player index."""
         return self["player"]
@@ -79,12 +84,12 @@ class Configuration(zerosum_env.helpers.Configuration):
 
     @property
     def seize_cost(self) -> float:
-        """The amount of plantor to seize a tree from competitor."""
+        """The amount of planter to seize a tree from competitor."""
         return self["seizeCost"]
 
     @property
     def plant_cost(self) -> float:
-        """The amount of plantor to plant a tree."""
+        """The amount of planter to plant a tree."""
         return self["plantCost"]
 
     @property
@@ -118,14 +123,14 @@ class Configuration(zerosum_env.helpers.Configuration):
         return self["recCollectorCost"]
 
     @property
-    def rec_plantor_cost(self) -> int:
-        """The amount of recruitment center to recruit a new plantor."""
-        return self["recPlantorCost"]
+    def rec_planter_cost(self) -> int:
+        """The amount of recruitment center to recruit a new planter."""
+        return self["recPlanterCost"]
 
     @property
-    def plantor_limit(self) -> int:
-        """The limitation of plantor."""
-        return self["plantorLimit"]
+    def planter_limit(self) -> int:
+        """The limitation of planter."""
+        return self["planterLimit"]
 
     @property
     def collector_limit(self) -> int:
@@ -198,7 +203,7 @@ class WorkerAction(Enum):
 
 class RecrtCenterAction(Enum):
     RECCOLLECTOR = auto()
-    RECPLANTOR = auto()
+    RECPLANTER = auto()
 
     def __str__(self) -> str:
         return self.name
@@ -206,7 +211,7 @@ class RecrtCenterAction(Enum):
 
 class Occupation(Enum):
     COLLECTOR = auto()
-    PLANTOR = auto()
+    PLANTER = auto()
 
     def __str__(self) -> str:
         return self.name
@@ -261,9 +266,9 @@ class Cell:
         return self._board.workers.get(self.worker_id)
 
     @property
-    def plantor(self) -> Optional['Plantor']:
-        """Returns the plantor on this cell if it exists and None otherwise."""
-        return self._board.plantors.get(self.worker_id)
+    def planter(self) -> Optional['Planter']:
+        """Returns the planter on this cell if it exists and None otherwise."""
+        return self._board.planters.get(self.worker_id)
 
     @property
     def collector(self) -> Optional['Collector']:
@@ -429,11 +434,11 @@ class Collector(Worker):
 
 
 # 种树人
-class Plantor(Worker):
+class Planter(Worker):
     def __init__(self, worker_id: WorkerId, position: Point, carbon: float, player_id: PlayerId, board: 'Board',
                  next_action: Optional[WorkerAction] = None) -> None:
         Worker.__init__(self, worker_id, position, carbon, player_id, board, next_action)
-        self._occupation = Occupation.PLANTOR
+        self._occupation = Occupation.PLANTER
 
     @property
     def occupation(self) -> Optional[Occupation]:
@@ -544,12 +549,12 @@ class Player:
         return res
 
     @property
-    def plantors(self) -> List[Plantor]:
+    def planters(self) -> List[Planter]:
         """Returns all collectors owned by this player."""
         res = []
         for worker_id in self.worker_ids:
             worker = self._board.workers[worker_id]
-            if worker.occupation == Occupation.PLANTOR:
+            if worker.occupation == Occupation.PLANTER:
                 res.append(worker)
         return res
 
@@ -622,6 +627,7 @@ class Board:
         self._current_player_id = observation.player
         self._players: Dict[PlayerId, Player] = {}
         self._trees: Dict[TreeId, Tree] = {}
+        self._trees_dict: Dict[TreeId, Any] = {}
         self._workers: Dict[WorkerId, Worker] = {}
         self._recrtCenters: Dict[RecrtCenterId, RecrtCenter] = {}
         self._cells: Dict[Point, Cell] = {}
@@ -644,7 +650,9 @@ class Board:
 
             for (tree_id, [tree_index, tree_age]) in player_trees.items():
                 tree_position = Point.from_index(tree_index, size)
-                self._add_tree(Tree(tree_id, tree_position, tree_age, player_id, self))
+                new_tree = Tree(tree_id, tree_position, tree_age, player_id, self)
+                self._add_tree(new_tree)
+                self._add_tree_dict(new_tree, observation.trees[tree_id][0], observation.trees[tree_id][1])
 
             for (worker_id, [worker_index, worker_carbon, worker_type]) in player_workers.items():
                 # In the raw observation, carbon is stored as a 1d list but we convert it to a 2d dict for convenience
@@ -658,8 +666,8 @@ class Board:
                 )
                 if worker_type == str(Occupation.COLLECTOR):
                     self._add_worker(Collector(worker_id, worker_position, worker_carbon, player_id, self, action))
-                elif worker_type == str(Occupation.PLANTOR):
-                    self._add_worker(Plantor(worker_id, worker_position, worker_carbon, player_id, self, action))
+                elif worker_type == str(Occupation.PLANTER):
+                    self._add_worker(Planter(worker_id, worker_position, worker_carbon, player_id, self, action))
                 else:
                     self._add_worker(Worker(worker_id, worker_position, worker_carbon, player_id, self, action))
 
@@ -702,12 +710,12 @@ class Board:
         return res
 
     @property
-    def plantors(self) -> Dict[WorkerId, Plantor]:
+    def planters(self) -> Dict[WorkerId, Planter]:
         """Returns all collectors on the current board."""
         res = {}
         for work_id in self._workers.keys():
             worker = self._workers[work_id]
-            if worker.occupation == Occupation.PLANTOR:
+            if worker.occupation == Occupation.PLANTER:
                 res[work_id] = worker
         return res
 
@@ -754,6 +762,7 @@ class Board:
             "players": players,
             "player": self.current_player_id,
             "step": self.step,
+            "trees": self._trees_dict,
             "remainingOverageTime": self._remaining_overage_time,
         }
 
@@ -819,6 +828,12 @@ class Board:
         tree.cell._tree_id = tree.id
         self._trees[tree.id] = tree
 
+    def _add_tree_dict(self: 'Board', tree: Tree, worker_id: WorkerId, tree_absorption) -> None:
+        if tree.id in self._trees_dict:
+            del self._trees_dict[tree.id]
+
+        self._trees_dict[tree.id] = [worker_id, tree_absorption]
+
     def _add_worker(self: 'Board', worker: Worker) -> None:
         worker.player.worker_ids.append(worker.id)
         worker.cell._worker_id = worker.id
@@ -835,13 +850,19 @@ class Board:
         if tree.cell.tree_id == tree.id:
             tree.cell._worker_id = None
         del self.trees[tree.id]
+        del self._trees_dict[tree.id]
 
     def _delete_worker(self: 'Board', worker: Worker) -> None:
-
         worker.player.worker_ids.remove(worker.id)
 
         if worker.cell.worker_id == worker.id:
             worker.cell._worker_id = None
+
+        for tree_id in self._trees_dict.keys():
+            tree_worker_id = self._trees_dict.get(tree_id)[0]
+            if tree_worker_id == worker.id:
+                self._trees_dict[tree_id][0] = None
+
         del self._workers[worker.id]
 
     def _delete_recrtCenter(self: 'Board', recrtCenter: RecrtCenter) -> None:
@@ -864,7 +885,7 @@ class Board:
         configuration = board.configuration
         plant_cost = configuration.plant_cost
         rec_collector_cost = configuration.rec_collector_cost
-        rec_plantor_cost = configuration.rec_plantor_cost
+        rec_planter_cost = configuration.rec_planter_cost
 
         # Process actions and store the results in the workers and recrtCenter lists for collision checking
 
@@ -881,12 +902,12 @@ class Board:
                     board._add_worker(
                         Collector(WorkerId(new_worker_id(player.id)), recrtCenter.position, 0, player.id, board))
                 # 招募种树员指令
-                if recrtCenter.next_action == RecrtCenterAction.RECPLANTOR and player.cash >= rec_plantor_cost and len(
-                        player.workers) < configuration.worker_limit:  # and len(player.plantors) < configuration.plantor_limit  # 暂时不控制种树员的数量
-                    # Handle RECPLANTOR actions
-                    player._cash = round(player._cash - rec_plantor_cost, 2)
+                if recrtCenter.next_action == RecrtCenterAction.RECPLANTER and player.cash >= rec_planter_cost and len(
+                        player.workers) < configuration.worker_limit:  # and len(player.planters) < configuration.planter_limit  # 暂时不控制种树员的数量
+                    # Handle RECPLANTER actions
+                    player._cash = round(player._cash - rec_planter_cost, 2)
                     board._add_worker(
-                        Plantor(WorkerId(new_worker_id(player.id)), recrtCenter.position, 0, player.id, board))
+                        Planter(WorkerId(new_worker_id(player.id)), recrtCenter.position, 0, player.id, board))
                 # Clear the recrtCenter's action so it doesn't repeat the same action automatically
                 recrtCenter.next_action = None
 
@@ -907,6 +928,7 @@ class Board:
                     tree.cell._tree_id = None
                     tree.cell._carbon = configuration.co2_frm_withered
                     board._delete_tree(tree)
+
                 else:
                     tree._age += 1  # 树龄 加1
 
@@ -928,7 +950,7 @@ class Board:
                 surround_tree_cell = board.cells[surround_tree_position]
                 if surround_tree_cell.tree_id is None \
                         and (surround_tree_cell.worker_id is None \
-                             or (surround_tree_cell.worker.occupation == Occupation.PLANTOR \
+                             or (surround_tree_cell.worker.occupation == Occupation.PLANTER \
                                  or (surround_tree_cell.worker.occupation == Occupation.COLLECTOR
                                      and surround_tree_cell.worker.next_action is not None))):
                     # 周围不存在树 且 (周围不存在人 或 周围存在种树员 或 周围存在捕碳员但不是停留 )
@@ -947,6 +969,7 @@ class Board:
                         surround_tree_position]
 
             tree.player._cash = round(tree_carbon + tree.player._cash, 2)
+            board._add_tree_dict(tree, self._trees_dict[tree.id][0], round(tree_carbon, 2))
 
         # 树周围 co2被净化
         for surround_tree_position in surround_tree_flag.keys():
@@ -1017,11 +1040,13 @@ class Board:
                     # 此处 无树 且无转化中心
                     delta_carbon = cell.carbon * configuration.collect_rate
 
-                    if worker.occupation == Occupation.PLANTOR and worker.player.cash >= plant_cost:
+                    if worker.occupation == Occupation.PLANTER and worker.player.cash >= plant_cost:
                         # 此处 当前停留方是种树人 且当前停留方金额超过种树金额
                         worker.player._cash = round(worker.player._cash - plant_cost, 2)
-                        board._add_tree(
-                            Tree(TreeId(new_tree_id(worker.player_id)), worker.position, 1, worker.player_id, board))
+                        new_tree = Tree(TreeId(new_tree_id(worker.player_id)), worker.position, 1, worker.player_id,
+                                        board)
+                        board._add_tree(new_tree)
+                        board._add_tree_dict(new_tree, worker.id, 0)
                         cell._carbon = 0
 
                     elif delta_carbon > 0 and worker.occupation == Occupation.COLLECTOR:
@@ -1036,7 +1061,9 @@ class Board:
                         worker.player._cash = round(worker.player._cash - configuration.seize_cost, 2)
                         org_tree_id, org_tree_age = cell.tree_id, cell.tree.age
                         board._delete_tree(cell.tree)
-                        board._add_tree(Tree(org_tree_id, cell.position, org_tree_age, worker.player_id, board))
+                        new_tree = Tree(org_tree_id, cell.position, org_tree_age, worker.player_id, board)
+                        board._add_tree(new_tree)
+                        board._add_tree_dict(new_tree, worker.id, 0)
 
         # Regenerate carbon in cells
         for cell in board.cells.values():
