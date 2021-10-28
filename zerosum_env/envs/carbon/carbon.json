@@ -4,9 +4,7 @@
   "description": "The game of arriving carbon neutrality.",
   "version": "1.0.0",
   "agents": [
-    1,
-    2,
-    4
+    2
   ],
   "configuration": {
     "episodeSteps": 300,
@@ -20,6 +18,23 @@
       "type": "integer",
       "default": 15,
       "minimum": 2
+    },
+    "startPosOffset": {
+      "description": "The offset of starting position",
+      "type": "integer",
+      "default": 2
+    },
+    "startingCellCarbon": {
+      "description": "The starting maximum mount of carbon in cell.",
+      "type": "number",
+      "default": 50,
+      "minimum": 0
+    },
+    "maxCellCarbon": {
+      "description": "The maximum carbon that can be in any cell.",
+      "type": "integer",
+      "default": 100,
+      "minimum": 0
     },
     "recCollectorCost": {
       "description": "The amount of recruitment center to recruit a new collector.",
@@ -43,6 +58,11 @@
       "type": "integer",
       "default": 0,
       "minimum": 0
+    },
+    "workerLimit": {
+      "description": "The number of worker",
+      "type": "integer",
+      "default": 10
     },
     "planterLimit": {
       "description": "The limitation of planter.",
@@ -71,32 +91,30 @@
     "seizeCost": {
       "description": "The amount of planter to seize a tree from competitor.",
       "type": "number",
-      "default": 40,
+      "default": 20,
       "minimum": 0
     },
     "collectRate": {
       "description": "The rate of collector collected from a cell by not moving.",
       "type": "number",
-      "default": 0.5,
+      "default": 0.25,
       "minimum": 0
     },
     "regenRate": {
       "description": "The rate carbon regenerates on the board.",
       "type": "number",
-      "default": 0.05,
+      "default": 0.02,
       "minimum": 0
     },
-    "startingCellCarbon": {
-      "description": "The starting maximum mount of carbon in cell.",
-      "type": "number",
-      "default": 50,
-      "minimum": 0
-    },
-    "maxCellCarbon": {
-      "description": "The maximum carbon that can be in any cell.",
+    "treeLifespan": {
+      "description": "The maximum age of tree",
       "type": "integer",
-      "default": 100,
-      "minimum": 0
+      "default": 50
+    },
+    "absorptionRate": {
+      "description": "The absorption rate of the tree",
+      "type": "number",
+      "default": 0.02
     },
     "randomSeed": {
       "description": "The seed used to initialize the random number generator.",
@@ -108,26 +126,6 @@
       "type": "number",
       "minimum": 0,
       "default": 60
-    },
-    "treeLifespan": {
-      "description": "The maximum age of tree",
-      "type": "integer",
-      "default": 50
-    },
-    "workerLimit": {
-      "description": "The number of worker",
-      "type": "integer",
-      "default": 10
-    },
-    "absorptionRate": {
-      "description": "The absorption rate of the tree",
-      "type": "number",
-      "default": 0.02
-    },
-    "startPosOffset" : {
-      "description": "The offset of starting position",
-      "type": "integer",
-      "default": 2
     },
     "actTimeout": 1,
     "runTimeout": 9600

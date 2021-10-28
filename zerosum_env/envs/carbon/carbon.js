@@ -138,18 +138,10 @@ async function renderer({
   };
 
   const getImagePath = () => {
-    let dir;
-    // 如果路径包含srcdoc，则认为是ipython，否则是html
-    if (location.pathname.indexOf('srcdoc') > -1) {
-      dir = '../../static/src/'
-    } else {
-      const pathName = location.pathname.substr(location.pathname.indexOf('/carbon/'));
-      const count = pathName.split('').filter(i => i == '/').length;
-      const str = '../';
-      dir = (count > 2? str.repeat(count-2) : './') + 'zerosum_env/static/src/';
-    }
-    // console.log(location.pathname, dir)
-    return dir;
+    let dir = 'https://ai-studio-match-dist.cdn.bcebos.com/spdb/zerosum_env/static/src/';
+        // 如果路径包含srcdoc，则认为是ipython，否则是html
+
+        return dir;
   }
 
 const createImage = (id) => {
