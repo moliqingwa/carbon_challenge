@@ -93,6 +93,11 @@ class Configuration(zerosum_env.helpers.Configuration):
         return self["plantCost"]
 
     @property
+    def plant_inflation_rate(self) -> float:
+        """The inflation rate to plant a tree."""
+        return self["plantInflationRate"]
+
+    @property
     def collect_rate(self) -> float:
         """The rate of carbon collected by a worker from a cell by not moving."""
         return self["collectRate"]
@@ -883,12 +888,17 @@ class Board:
         # Create a copy of the board to modify so we don't affect the current board
         board = deepcopy(self)
         configuration = board.configuration
-        plant_cost = configuration.plant_cost
         rec_collector_cost = configuration.rec_collector_cost
         rec_planter_cost = configuration.rec_planter_cost
 
-        # Process actions and store the results in the workers and recrtCenter lists for collision checking
+        # 计算当前轮
+        plant_cost = configuration.plant_cost
+        plant_inflation_rate = configuration.plant_inflation_rate
+        alive_tree_count_in_market = sum([tree.age < configuration.tree_lifespan
+                                          for player in board.players.values() for tree in player.trees])
+        current_plant_cost = plant_cost + alive_tree_count_in_market * plant_inflation_rate
 
+        # Process actions and store the results in the workers and recrtCenter lists for collision checking
         disappeared_tree_flag = {}
         for player in board.players.values():
 
@@ -928,7 +938,6 @@ class Board:
                     tree.cell._tree_id = None
                     tree.cell._carbon = configuration.co2_frm_withered
                     board._delete_tree(tree)
-
                 else:
                     tree._age += 1  # 树龄 加1
 
@@ -1040,9 +1049,9 @@ class Board:
                     # 此处 无树 且无转化中心
                     delta_carbon = cell.carbon * configuration.collect_rate
 
-                    if worker.occupation == Occupation.PLANTER and worker.player.cash >= plant_cost:
+                    if worker.occupation == Occupation.PLANTER and worker.player.cash >= current_plant_cost:
                         # 此处 当前停留方是种树人 且当前停留方金额超过种树金额
-                        worker.player._cash = round(worker.player._cash - plant_cost, 2)
+                        worker.player._cash = round(worker.player._cash - current_plant_cost, 2)
                         new_tree = Tree(TreeId(new_tree_id(worker.player_id)), worker.position, 1, worker.player_id,
                                         board)
                         board._add_tree(new_tree)

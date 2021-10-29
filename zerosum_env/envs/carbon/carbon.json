@@ -77,9 +77,15 @@
       "minimum": 0
     },
     "plantCost": {
-      "description": "The amount of planter to plant a tree.",
+      "description": "The initial amount of planter to plant a tree.",
       "type": "integer",
       "default": 20,
+      "minimum": 0
+    },
+    "plantInflationRate": {
+      "description": "The extra amount of planter to plant a tree. Real cost is (plantCost + n * plantInflationRate).",
+      "type": "number",
+      "default": 2,
       "minimum": 0
     },
     "co2FrmWithered": {
