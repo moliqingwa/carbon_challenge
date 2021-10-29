@@ -13,10 +13,10 @@ file_path = 'my123.txt'
 
 
 def easy_log(s, loglevel='D'):
-    # pass
-    with open(file_path, 'a') as file_object:
-        file_object.write(
-            f'{datetime.datetime.now().strftime(MY_DATEFMT)}{loglevel.upper()[0]} {s} '+'\n')
+    pass
+    # with open(file_path, 'a') as file_object:
+    #     file_object.write(
+    #         f'{datetime.datetime.now().strftime(MY_DATEFMT)}{loglevel.upper()[0]} {s} '+'\n')
     # print(
     #     f'{datetime.datetime.now().strftime(MY_DATEFMT)}{loglevel.upper()[0]} {s}')
 
