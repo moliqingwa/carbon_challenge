@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections import defaultdict
 from copy import deepcopy
 from enum import Enum, auto
 from functools import wraps
@@ -158,9 +159,14 @@ class Configuration(zerosum_env.helpers.Configuration):
         return self["treeLifespan"]
 
     @property
-    def absorption_rate(self) -> float:
-        """The absorption rate of the tree"""
-        return self["absorptionRate"]
+    def initial_absorption_rate(self) -> float:
+        """The initial absorption rate of the tree"""
+        return self["initialAbsorptionRate"]
+
+    @property
+    def absorption_growth_rate(self) -> float:
+        """The absorption growth rate of the tree"""
+        return self["AbsorptionGrowthRate"]
 
     @property
     def start_pos_offset(self) -> float:
@@ -966,6 +972,9 @@ class Board:
                     surround_tree_flag[surround_tree_position] = surround_tree_flag[surround_tree_position] + 1
 
         # Collect carbon from cells into trees
+        tree_absorption_t0 = configuration.initial_absorption_rate
+        tree_absorption_growth = configuration.absorption_growth_rate
+        board_carbon_reduction = defaultdict(float)
         for tree in board.trees.values():
             tree_carbon = 0
             for surround_tree in tree.surround():
@@ -974,8 +983,9 @@ class Board:
                 if surround_tree_cell.carbon > 0 and \
                         surround_tree_position in surround_tree_flag and \
                         surround_tree_flag[surround_tree_position] > 0:
-                    tree_carbon += (surround_tree_cell.carbon * configuration.absorption_rate) / surround_tree_flag[
-                        surround_tree_position]
+                    absorbed_co2 = surround_tree_cell.carbon * (tree_absorption_t0 + tree.age * tree_absorption_growth)
+                    tree_carbon += absorbed_co2
+                    board_carbon_reduction[surround_tree_position] += absorbed_co2
 
             tree.player._cash = round(tree_carbon + tree.player._cash, 2)
             board._add_tree_dict(tree, self._trees_dict[tree.id][0], round(tree_carbon, 2))
@@ -985,7 +995,8 @@ class Board:
             surround_tree_cell = board.cells[surround_tree_position]
             # 周围单元格的co2大于0，并且，单元格的碳可以被吸收
             if surround_tree_cell.carbon > 0 and surround_tree_flag[surround_tree_position] > 0:
-                surround_tree_cell._carbon = round(surround_tree_cell.carbon * (1 - configuration.absorption_rate), 3)
+                current_value = surround_tree_cell.carbon - board_carbon_reduction[surround_tree_position]
+                surround_tree_cell._carbon = round(max(current_value, 0), 3)
 
         def resolve_collision(workers: List[Worker]) -> Tuple[Optional[Worker], List[Worker]]:
             """

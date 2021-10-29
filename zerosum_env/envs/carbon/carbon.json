@@ -117,10 +117,15 @@
       "type": "integer",
       "default": 50
     },
-    "absorptionRate": {
-      "description": "The absorption rate of the tree",
+    "initialAbsorptionRate": {
+      "description": "The initial absorption rate of the tree",
       "type": "number",
-      "default": 0.02
+      "default": 0.01
+    },
+    "AbsorptionGrowthRate": {
+      "description": "The max absorption rate of the tree (init_rate + life * growth_rate",
+      "type": "number",
+      "default": 0.0004
     },
     "randomSeed": {
       "description": "The seed used to initialize the random number generator.",
