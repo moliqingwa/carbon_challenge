@@ -403,7 +403,7 @@ class Environment:
             reward = {"reward": agent.reward}
             if len(self.steps) > 1:
                 if reward["reward"] is not None:
-                    reward["reward"] -= self.steps[-2][position].reward
+                    reward["reward"] = round(reward["reward"] - self.steps[-2][position].reward, 2)
 
                 current_player = agent.observation["players"][position]
                 last_player = self.steps[-2][0]["observation"]["players"][position]
@@ -411,7 +411,7 @@ class Environment:
                     reward[worker_id] = 0
                     if worker_id in last_player[2]:
                         if worker[2] == "COLLECTOR":
-                            reward[worker_id] = round(worker[1] - last_player[2][worker_id][1],2)
+                            reward[worker_id] = round(worker[1] - last_player[2][worker_id][1], 2)
                         elif worker[2] == "PLANTER":
                             trees_dict = agent.observation["trees"]
 

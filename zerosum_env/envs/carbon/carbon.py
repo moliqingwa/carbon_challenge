@@ -260,23 +260,10 @@ def populate_board(state, env):
     # Distribute the starting workers evenly.
     num_agents = len(state)
     starting_positions = [0] * num_agents
-    if num_agents == 1:
-        starting_positions[0] = size * (size // 2) + size // 2
-    elif num_agents == 2:
-        # starting_positions[0] = size * (size // 2) + size // 4
-        # starting_positions[1] = size * (size // 2) + math.ceil(3 * size / 4) - 1
-        starting_positions[0] = size * \
-                                (size // 4 + config.startPosOffset) + \
-                                size // 4 + config.startPosOffset
-        starting_positions[1] = size * (3 * size // 4 - config.startPosOffset) + \
-                                3 * size // 4 - config.startPosOffset
-        obs.carbon[starting_positions[0]] = 0
-        obs.carbon[starting_positions[1]] = 0
-    elif num_agents == 4:
-        starting_positions[0] = size * (size // 4) + size // 4
-        starting_positions[1] = size * (size // 4) + 3 * size // 4
-        starting_positions[2] = size * (3 * size // 4) + size // 4
-        starting_positions[3] = size * (3 * size // 4) + 3 * size // 4
+    starting_positions[0] = size * (size // 4 + config.startPosOffset) + size // 4 + config.startPosOffset
+    starting_positions[1] = size * (3 * size // 4 - config.startPosOffset) + 3 * size // 4 - config.startPosOffset
+    obs.carbon[starting_positions[0]] = 0
+    obs.carbon[starting_positions[1]] = 0
 
     # Initialize the players.
     reset_ids()

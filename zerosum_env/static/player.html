@@ -20,8 +20,8 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" charset="utf-8"/>
     <link
       rel="stylesheet"
-      href="./css/reset.css"
-      crossorigin="anonymous"
+      href="https://ai-studio-match-dist.cdn.bcebos.com/spdb/css/reset.css"
+
     />
     <style type="text/css">
       html,
@@ -37,9 +37,9 @@
         image-rendering: crisp-edges; */
       }
     </style>
-    <script src="./js/preact.umd.js"></script>
-    <script src="./js/hooks.umd.js"></script>
-    <script src="./js/htm.umd.js"></script>
+    <script src="https://ai-studio-match-dist.cdn.bcebos.com/spdb/js/preact.umd.js"></script>
+    <script src="https://ai-studio-match-dist.cdn.bcebos.com/spdb/js/hooks.umd.js"></script>
+    <script src="https://ai-studio-match-dist.cdn.bcebos.com/spdb/js/htm.umd.js"></script>
     <script>
       // Polyfill for Styled Components
       window.React = {
@@ -48,7 +48,7 @@
         PropTypes: { func: {} },
       };
     </script>
-    <script src="./js/styled-components.min.js"></script>
+    <script src="https://ai-studio-match-dist.cdn.bcebos.com/spdb/js/styled-components.min.js"></script>
   </head>
   <body>
     <script>
@@ -251,16 +251,9 @@
       `;
 
       const getImagePath = () => {
-        let dir;
+        let dir = 'https://ai-studio-match-dist.cdn.bcebos.com/spdb/zerosum_env/static/src/';
         // 如果路径包含srcdoc，则认为是ipython，否则是html
-        if (location.pathname.indexOf('srcdoc') > -1) {
-          dir = '../../static/src/'
-        } else {
-          const pathName = location.pathname.substr(location.pathname.indexOf('/carbon/'));
-          const count = pathName.split('').filter(i => i == '/').length;
-          const str = '../';
-          dir = (count > 2? str.repeat(count-2) : './') + 'zerosum_env/static/src/';
-        }
+
         return dir;
       }
 
