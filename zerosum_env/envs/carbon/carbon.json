@@ -91,7 +91,7 @@
     "co2FrmWithered": {
       "description": "The amount of carbon from withered tree.",
       "type": "integer",
-      "default": 5,
+      "default": 10,
       "minimum": 0
     },
     "seizeCost": {
@@ -100,16 +100,22 @@
       "default": 20,
       "minimum": 0
     },
-    "collectRate": {
-      "description": "The rate of collector collected from a cell by not moving.",
+    "initialCollectRate": {
+      "description": "The initial rate of collector collected from a cell by not moving.",
       "type": "number",
-      "default": 0.25,
+      "default": 0.26,
+      "minimum": 0
+    },
+    "collectDecreaseRate": {
+      "description": "The decrease rate for collector to collect CO2 according to one player's collectors count.",
+      "type": "number",
+      "default": 0.01,
       "minimum": 0
     },
     "regenRate": {
       "description": "The rate carbon regenerates on the board.",
       "type": "number",
-      "default": 0.02,
+      "default": 0.05,
       "minimum": 0
     },
     "treeLifespan": {
@@ -125,7 +131,7 @@
     "AbsorptionGrowthRate": {
       "description": "The max absorption rate of the tree (init_rate + life * growth_rate",
       "type": "number",
-      "default": 0.0004
+      "default": 0.001
     },
     "randomSeed": {
       "description": "The seed used to initialize the random number generator.",

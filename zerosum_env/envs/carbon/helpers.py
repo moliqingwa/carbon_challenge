@@ -22,6 +22,7 @@ import sys
 import zerosum_env.helpers
 
 from .idgen import new_worker_id, new_tree_id
+from .termtables import to_string
 
 
 # region Data Model Classes
@@ -99,9 +100,14 @@ class Configuration(zerosum_env.helpers.Configuration):
         return self["plantInflationRate"]
 
     @property
-    def collect_rate(self) -> float:
-        """The rate of carbon collected by a worker from a cell by not moving."""
-        return self["collectRate"]
+    def initial_collect_rate(self) -> float:
+        """The initial rate of carbon collected by a worker from a cell by not moving."""
+        return self["initialCollectRate"]
+
+    @property
+    def collect_decrease_rate(self) -> float:
+        """The decrease rate for collector to collect CO2 according to one player's collectors count."""
+        return self["collectDecreaseRate"]
 
     @property
     def regen_rate(self) -> float:
@@ -794,45 +800,36 @@ class Board:
     def __str__(self) -> str:
         """
         The board is printed in a grid with the following rules:
-        Capital letters are recrtCenter
-        Lower case letters are workers
-        Digits are cell carbon and scale from 0-9 directly proportional to a value between 0 and self.configuration.max_cell_carbon
-        Player 1 is letter a/A
-        Player 2 is letter b/B
+        B letter is recrtCenter (B represents Base)
+        P letter is planter (P represents Planter)
+        C letter is collector (C represents Collector)
+        Player 1 is number 0
+        Player 2 is number 1
         etc.
         """
+        player_dict = self.players
         size = self.configuration.size
-        result = ''
+        # print(f"==== STEP: {observation.step} ====")
+        contents = []
         for y in range(size):
+            row = []
             for x in range(size):
                 cell = self[(x, size - y - 1)]
-                result += '| '
-                # This normalizes a value from 0 to max_cell carbon to a value from 0 to 9
-                normalized_carbon = int(9.0 * cell.carbon / float(self.configuration.max_cell_carbon))
-                result += str(normalized_carbon)
+                s_carbon = f"{cell.carbon:.1f}"
+                s_worker = '' if cell.worker is None else \
+                    f'{str(cell.worker.occupation)[0]}{cell.worker.player_id} ({cell.worker.carbon})'
+                s_base = '' if cell.recrtCenter is None else \
+                    f'B{cell.recrtCenter.player_id} ({player_dict[cell.recrtCenter.player_id].cash})'
+                s_tree = '' if cell.tree is None else f"T{cell.tree.player_id}"
 
-                result += (
-                    # chr(ord('a') + cell.worker.player_id)
-                    str(cell.worker.occupation)[0] + str(cell.worker.player_id)
-                    if cell.worker is not None
-                    else ''
-                )
-                result += (
-                    # chr(ord('A') + cell.recrtCenter.player_id)
-                    'R' + str(cell.recrtCenter.player_id)
-                    if cell.recrtCenter is not None
-                    else ''
-                )
-                result += (
-                    # chr(ord('A') + cell.recrtCenter.player_id)
-                    'T' + str(cell.tree.player_id)
-                    if cell.tree is not None
-                    else ''
-                )
+                s_base_or_tree = s_base + s_tree
+                if s_base_or_tree:
+                    row.append(f"{s_base_or_tree} {s_worker}")
+                else:
+                    row.append(f"{s_carbon} {s_worker}")
+            contents.append(row)
 
-            result += ' |\n'
-
-        return result
+        return to_string(contents)
 
     def _add_tree(self: 'Board', tree: Tree) -> None:
         tree.player.tree_ids.append(tree.id)
@@ -976,6 +973,7 @@ class Board:
         tree_absorption_growth = configuration.absorption_growth_rate
         board_carbon_reduction = defaultdict(float)
         for tree in board.trees.values():
+            tree_absorption_rate = tree_absorption_t0 + (tree.age - 1) * tree_absorption_growth  # last turn age !!!
             tree_carbon = 0
             for surround_tree in tree.surround():
                 surround_tree_position = tree.cell.position.translate(surround_tree, configuration.size)
@@ -983,7 +981,7 @@ class Board:
                 if surround_tree_cell.carbon > 0 and \
                         surround_tree_position in surround_tree_flag and \
                         surround_tree_flag[surround_tree_position] > 0:
-                    absorbed_co2 = surround_tree_cell.carbon * (tree_absorption_t0 + tree.age * tree_absorption_growth)
+                    absorbed_co2 = surround_tree_cell.carbon * tree_absorption_rate
                     tree_carbon += absorbed_co2
                     board_carbon_reduction[surround_tree_position] += absorbed_co2
 
@@ -1052,13 +1050,16 @@ class Board:
                     worker._carbon = 0
 
         # Collect carbon from cells into workers
+        player_collect_rate = {player_id: max(configuration.initial_collect_rate -
+                                          len(player.collectors) * configuration.collect_decrease_rate, 0)
+                               for player_id, player in board.players.items()}
         for worker in board.workers.values():
             cell = worker.cell
 
             if worker.next_action not in WorkerAction.moves():
                 if cell.tree_id is None and cell.recrtCenter_id is None:
                     # 此处 无树 且无转化中心
-                    delta_carbon = cell.carbon * configuration.collect_rate
+                    delta_carbon = cell.carbon * player_collect_rate.get(worker.player_id, 0)
 
                     if worker.occupation == Occupation.PLANTER and worker.player.cash >= current_plant_cost:
                         # 此处 当前停留方是种树人 且当前停留方金额超过种树金额
