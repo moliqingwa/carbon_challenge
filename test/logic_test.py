@@ -24,7 +24,7 @@ class LogicTest(unittest.TestCase):
 
     # Test case @1.2
     def test_cells_regen_carbon_upper_limit(self):
-        board = create_board(starting_carbon=1000, size=2, random_seed=1, regenRate=3)
+        board = create_board(starting_carbon=1000, size=2, random_seed=1, regenRate=3, startPosOffset=1)
         cell = first(board.cells.values())
         next_board = board.next()
         next_cell = next_board[cell.position]
@@ -68,41 +68,41 @@ class LogicTest(unittest.TestCase):
         print("2 ok")
 
     # Test case @1.4
-    def test_recrtCenter_recplantor_fail(self):
-        def recrtCenter_recplantor_agent(observation, configuration):
+    def test_recrtCenter_recplanter_fail(self):
+        def recrtCenter_recplanter_agent(observation, configuration):
             board = Board(observation, configuration)
             current_player = board.current_player
             for recrtCenter in current_player.recrtCenters:
-                recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+                recrtCenter.next_action = RecrtCenterAction.RECPLANTER
             return current_player.next_actions
 
         # check fail for money
         board_size = 15
-        recPlantorCost = 60
+        recPlanterCost = 60
         env = make("carbon", configuration={"size": board_size, "episodeSteps": 5,
-                                            "recPlantorCost": recPlantorCost}, debug=True)
+                                            "recPlanterCost": recPlanterCost}, debug=True)
         agent_count = 2
         env.reset(agent_count)
-        env.run([recrtCenter_recplantor_agent, "random"])
+        env.run([recrtCenter_recplanter_agent, "random"])
 
         # check action
-        self.assertEqual(env.steps[1][0]["action"]["player-0-recrtCenter-0"], "RECPLANTOR")
+        self.assertEqual(env.steps[1][0]["action"]["player-0-recrtCenter-0"], "RECPLANTER")
         # check count
         self.assertEqual(len(env.steps[1][0]["observation"]["players"][0][2]), 0)
         print("1 ok")
 
         # check fail for count
         board_size = 15
-        recPlantorCost = 25
+        recPlanterCost = 25
         env = make("carbon", configuration={"size": board_size, "episodeSteps": 5,
-                                            "recPlantorCost": recPlantorCost, "workerLimit": 1}, debug=True)
+                                            "recPlanterCost": recPlanterCost, "workerLimit": 1}, debug=True)
         agent_count = 2
         env.reset(agent_count)
-        env.run([recrtCenter_recplantor_agent, "random"])
+        env.run([recrtCenter_recplanter_agent, "random"])
 
         # check action
-        self.assertEqual(env.steps[1][0]["action"]["player-0-recrtCenter-0"], "RECPLANTOR")
-        self.assertEqual(env.steps[2][0]["action"]["player-0-recrtCenter-0"], "RECPLANTOR")
+        self.assertEqual(env.steps[1][0]["action"]["player-0-recrtCenter-0"], "RECPLANTER")
+        self.assertEqual(env.steps[2][0]["action"]["player-0-recrtCenter-0"], "RECPLANTER")
         # check count
         self.assertEqual(len(env.steps[2][0]["observation"]["players"][0][2]), 1)
         print("2 ok")
@@ -121,7 +121,10 @@ class LogicTest(unittest.TestCase):
         worker.next_action = WorkerAction.UP
         board = board.next()
         worker = first(board.workers.values())
-        expected_delta = round(worker.cell.carbon * board.configuration.collect_rate, 2)
+        collect_rate = max(board.configuration.initial_collect_rate -
+                           len(board.players[worker.player_id].collectors) * board.configuration.collect_decrease_rate,
+                           0)
+        expected_delta = round(worker.cell.carbon * collect_rate, 2)
         next_board = board.next()
         next_worker = next_board.workers[worker.id]
         worker_delta = next_worker.carbon - worker.carbon
@@ -153,11 +156,11 @@ class LogicTest(unittest.TestCase):
         self.assertEqual(worker_delta, 0)
 
     # Test case @1.7
-    def test_plantor_no_move_on_plant_tree(self):
+    def test_planter_no_move_on_plant_tree(self):
         board = create_board(starting_carbon=1000, size=5, random_seed=1, regenRate=0.05, agent_count=1)
         me = board.current_player
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
         worker = first(board.workers.values())
         worker.next_action = WorkerAction.UP
@@ -168,20 +171,20 @@ class LogicTest(unittest.TestCase):
         next_board = board.next()
         me = board.current_player
         next_me = next_board.current_player
-        for worker in next_me.plantors:
-            plantor_position = worker.position
+        for worker in next_me.planters:
+            planter_position = worker.position
         for tree in next_me.trees:
             tree_position = tree.position
-        self.assertEqual(plantor_position, tree_position)
+        self.assertEqual(planter_position, tree_position)
         self.assertEqual(me.cash - board.configuration.plant_cost, next_me.cash)
 
     # Test case @1.8
-    def test_plantor_move_on_plant_no_tree(self):
+    def test_planter_move_on_plant_no_tree(self):
         board = create_board(starting_carbon=1000, size=5, random_seed=1, regenRate=0.05, agent_count=1)
 
         me = board.current_player
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
         worker = first(board.workers.values())
         worker.next_action = WorkerAction.LEFT
@@ -194,7 +197,7 @@ class LogicTest(unittest.TestCase):
 
     # Test case @1.9
     def test_collector_convert_carbon(self):
-        board = create_board(starting_carbon=1000, size=5, random_seed=1, regenRate=0.05, agent_count=1)
+        board = create_board(starting_carbon=1000, size=5, random_seed=1, regenRate=0.05, agent_count=2)
         me = board.current_player
         for recrtCenter in me.recrtCenters:
             recrtCenter.next_action = RecrtCenterAction.RECCOLLECTOR
@@ -238,11 +241,11 @@ class LogicTest(unittest.TestCase):
         print(next_board)
 
     # Test case @1.11
-    def test_plantor_stay_opponent_recrtCenter(self):
+    def test_planter_stay_opponent_recrtCenter(self):
         board = create_board(starting_carbon=1000, size=5, random_seed=1, regenRate=0.05, agent_count=2)
         me = board.current_player
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
         opponents = board.opponents
         for opponent in opponents:
@@ -251,17 +254,17 @@ class LogicTest(unittest.TestCase):
         worker = first(board.workers.values())
         worker._position = opponent_recrtCenter_position
         next_board = board.next()
-        self.assertEqual(me.cash - board.configuration.rec_plantor_cost, next_board.current_player.cash)
+        self.assertEqual(me.cash - board.configuration.rec_planter_cost, next_board.current_player.cash)
         self.assertEqual(me.trees, next_board.current_player.trees)
         print(board)
         print(next_board)
 
     # Test case @1.12-1
-    def test_plantor_plant_fail_money(self):
-        board = create_board(starting_carbon=1000, size=5, random_seed=1, regenRate=0.05, agent_count=1)
+    def test_planter_plant_fail_money(self):
+        board = create_board(starting_carbon=1000, size=5, random_seed=1, regenRate=0.05, agent_count=2)
         me = board.current_player
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
         worker = first(board.workers.values())
         worker.next_action = WorkerAction.LEFT
@@ -276,29 +279,29 @@ class LogicTest(unittest.TestCase):
         print(next_board)
 
     # Test case @1.12-2
-    def test_plantor_plant_fail_recrtCenter(self):
-        board = create_board(starting_carbon=1000, size=5, random_seed=1, regenRate=0.05, agent_count=1)
+    def test_planter_plant_fail_recrtCenter(self):
+        board = create_board(starting_carbon=1000, size=5, random_seed=1, regenRate=0.05, agent_count=2)
         me = board.current_player
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
         next_board = board.next()
         self.assertEqual(board.current_player.trees, next_board.current_player.trees)
         self.assertEqual(len(next_board.current_player.trees), 0)
 
     # Test case @1.12-3
-    def test_plantor_plant_fail_position(self):
+    def test_planter_plant_fail_position(self):
         env = make("carbon", configuration={
             "size": 5,
             "startingCarbon": 1000,
             "randomSeed": 1,
             "regenRate": 0.05,
-            "recPlantorCost": 5,
+            "recPlanterCost": 5,
         })
-        board = Board(env.reset(1)[0].observation, env.configuration)
+        board = Board(env.reset(2)[0].observation, env.configuration)
         me = board.current_player
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
         worker = first(board.workers.values())
         worker.next_action = WorkerAction.LEFT
@@ -316,20 +319,20 @@ class LogicTest(unittest.TestCase):
             "startingCarbon": 1000,
             "randomSeed": 1,
             "regenRate": 0.05,
-            "recPlantorCost": 5,
+            "recPlanterCost": 5,
             "recCollectorCost": 5,
         })
         board = Board(env.reset(1)[0].observation, env.configuration)
         me = board.current_player
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
-        plantor = first(board.plantors.values())
-        plantor.next_action = WorkerAction.LEFT
+        planter = first(board.planters.values())
+        planter.next_action = WorkerAction.LEFT
         board = board.next()
         board = board.next()
-        plantor = first(board.plantors.values())
-        plantor.next_action = WorkerAction.LEFT
+        planter = first(board.planters.values())
+        planter.next_action = WorkerAction.LEFT
         board = board.next()
         me = board.current_player
         for recrtCenter in me.recrtCenters:
@@ -350,7 +353,7 @@ class LogicTest(unittest.TestCase):
             "startingCarbon": 1000,
             "randomSeed": 1,
             "regenRate": 0.05,
-            "recPlantorCost": 5,
+            "recPlanterCost": 5,
             "recCollectorCost": 5,
         })
         board = Board(env.reset(2)[0].observation, env.configuration)
@@ -360,7 +363,7 @@ class LogicTest(unittest.TestCase):
         opponents = board.opponents
         for opponent in opponents:
             for recrtCenter in opponent.recrtCenters:
-                recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+                recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
         opponent_worker = first(first(board.opponents).workers)
         opponent_worker.next_action = WorkerAction.UP
@@ -393,7 +396,7 @@ class LogicTest(unittest.TestCase):
         opponents = board.opponents
         for opponent in opponents:
             for recrtCenter in opponent.recrtCenters:
-                recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+                recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
         opponent_worker = first(first(board.opponents).workers)
         opponent_worker.next_action = WorkerAction.UP
@@ -418,20 +421,20 @@ class LogicTest(unittest.TestCase):
         self.assertEqual(len(board.workers), len(next_board.workers))
 
     # Test case @1.16
-    def test_plantor_occupy_tree(self):
+    def test_planter_occupy_tree(self):
         env = make("carbon", configuration={
             "size": 5,
             "startingCarbon": 1000,
             "randomSeed": 1,
             "regenRate": 0.05,
-            "recPlantorCost": 5,
+            "recPlanterCost": 5,
             "recCollectorCost": 5,
         })
         board = Board(env.reset(2)[0].observation, env.configuration)
         opponents = board.opponents
         for opponent in opponents:
             for recrtCenter in opponent.recrtCenters:
-                recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+                recrtCenter.next_action = RecrtCenterAction.RECPLANTER
 
         board = board.next()
         opponent_worker = first(first(board.opponents).workers)
@@ -441,7 +444,7 @@ class LogicTest(unittest.TestCase):
         opponent_worker.next_action = WorkerAction.UP
         me = board.current_player
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
         board = board.next()
         opponent_worker = first(first(board.opponents).workers)
@@ -465,12 +468,12 @@ class LogicTest(unittest.TestCase):
         self.assertEqual(len(board.workers), len(next_board.workers))
 
     # Test case @1.17
-    def test_plantor_occupy_tree_fail_money(self):
+    def test_planter_occupy_tree_fail_money(self):
         board = create_board(starting_carbon=1000, size=5, random_seed=1, regenRate=0.05, agent_count=2)
         opponents = board.opponents
         for opponent in opponents:
             for recrtCenter in opponent.recrtCenters:
-                recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+                recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
         opponent_worker = first(first(board.opponents).workers)
         opponent_worker.next_action = WorkerAction.UP
@@ -479,7 +482,7 @@ class LogicTest(unittest.TestCase):
         opponent_worker.next_action = WorkerAction.UP
         me = board.current_player
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
         board = board.next()
         opponent_worker = first(first(board.opponents).workers)
@@ -501,21 +504,29 @@ class LogicTest(unittest.TestCase):
         self.assertEqual(len(board.workers), len(next_board.workers))
 
     # Test case @1.18
-    def test_plantors_collision_all_destroys(self):
+    def test_planters_collision_all_destroys(self):
         board = create_board(agent_count=2)
         opponents = board.opponents
         for opponent in opponents:
             for recrtCenter in opponent.recrtCenters:
-                recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+                recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         me = board.current_player
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
-        opponent_worker = first(first(board.opponents).workers)
-        opponent_worker.next_action = WorkerAction.DOWN
+
         player_worker = first(board.current_player.workers)
-        player_worker.next_action = WorkerAction.LEFT
+        player_worker.next_action = WorkerAction.UP
+        opponent_worker = first(first(board.opponents).workers)
+        opponent_worker.next_action = WorkerAction.RIGHT
+
+        board = board.next()
+        player_worker = first(board.current_player.workers)
+        player_worker.next_action = WorkerAction.UP
+        opponent_worker = first(first(board.opponents).workers)
+        opponent_worker.next_action = WorkerAction.RIGHT
         next_board = board.next()
+
         self.assertEqual(len(board.current_player.workers) - 1, len(next_board.current_player.workers))
         self.assertEqual(len(board.workers) - 2, len(next_board.workers))
         self.assertEqual(board.current_player.cash, next_board.current_player.cash)
@@ -533,11 +544,20 @@ class LogicTest(unittest.TestCase):
         board = board.next()
         for collector in board.collectors.values():
             collector._carbon = 2000
-        opponent_worker = first(first(board.opponents).workers)
-        opponent_worker.next_action = WorkerAction.DOWN
-        player_worker = first(board.current_player.workers)
-        player_worker.next_action = WorkerAction.LEFT
+
+        player_worker = first(board.current_player.workers)  # (2, 0)
+        player_worker.next_action = WorkerAction.UP  # -> (2, 1)
+        opponent_worker = first(first(board.opponents).workers)  # (0, 2)
+        opponent_worker.next_action = WorkerAction.RIGHT  # -> (1, 2)
         next_board = board.next()
+
+        board = next_board
+        player_worker = first(board.current_player.workers)  # (2, 1)
+        player_worker.next_action = WorkerAction.UP  # -> (2, 2)
+        opponent_worker = first(first(board.opponents).workers)  # (1, 2)
+        opponent_worker.next_action = WorkerAction.RIGHT  # -> (2, 2)
+        next_board = board.next()
+
         self.assertEqual(len(board.current_player.workers) - 1, len(next_board.current_player.workers))
         self.assertEqual(len(board.workers) - 2, len(next_board.workers))
         self.assertEqual(next_board.cells[(2, 2)]._carbon, next_board.configuration.max_cell_carbon)
@@ -596,7 +616,7 @@ class LogicTest(unittest.TestCase):
                          (original_cash - next_board.configuration.rec_collector_cost), sum)
 
     # Test case @1.22
-    def test_collector_plantor_collision_on_cell(self):
+    def test_collector_planter_collision_on_cell(self):
         board = create_board(agent_count=2)
         opponents = board.opponents
         for opponent in opponents:
@@ -604,7 +624,7 @@ class LogicTest(unittest.TestCase):
                 recrtCenter.next_action = RecrtCenterAction.RECCOLLECTOR
         me = board.current_player
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
         for collector in board.collectors.values():
             collector._carbon = 30
@@ -618,7 +638,7 @@ class LogicTest(unittest.TestCase):
         self.assertEqual(next_board.cells[(2, 2)]._carbon, 30)
 
     # Test case @1.23
-    def test_collector_plantor_collision_on_tree(self):
+    def test_collector_planter_collision_on_tree(self):
         board = create_board(agent_count=2)
         opponents = board.opponents
         for opponent in opponents:
@@ -626,7 +646,7 @@ class LogicTest(unittest.TestCase):
                 recrtCenter.next_action = RecrtCenterAction.RECCOLLECTOR
         me = board.current_player
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
         player_worker = first(board.current_player.workers)
         player_worker.next_action = WorkerAction.LEFT
@@ -661,16 +681,16 @@ class LogicTest(unittest.TestCase):
         player_collector.next_action = WorkerAction.LEFT
         me = board.current_player
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
         player_collector = first(board.current_player.collectors)
         player_collector.next_action = WorkerAction.LEFT
-        player_plantor = first(board.current_player.plantors)
-        player_plantor.next_action = WorkerAction.LEFT
+        player_planter = first(board.current_player.planters)
+        player_planter.next_action = WorkerAction.LEFT
         board = board.next()
         board = board.next()
-        player_plantor = first(board.current_player.plantors)
-        player_plantor.next_action = WorkerAction.RIGHT
+        player_planter = first(board.current_player.planters)
+        player_planter.next_action = WorkerAction.RIGHT
         opponent_collector = first(first(board.opponents).collectors)
         opponent_collector.next_action = WorkerAction.DOWN
         board = board.next()
@@ -694,7 +714,7 @@ class LogicTest(unittest.TestCase):
         board = create_board(size, starting_carbon, agent_count=2, random_seed=1)
         me = board.current_player
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         opponents = board.opponents
         for opponent in opponents:
             for recrtCenter in opponent.recrtCenters:
@@ -704,11 +724,11 @@ class LogicTest(unittest.TestCase):
         print(next_board)
 
         me = next_board.current_player
-        current_plantor = first(me.plantors)
+        current_planter = first(me.planters)
         opponent_collector = first(first(next_board.opponents).collectors)
         for i in range(6):
             board = next_board
-            current_plantor.next_action = WorkerAction.RIGHT
+            current_planter.next_action = WorkerAction.RIGHT
             opponent_collector.next_action = WorkerAction.LEFT
             next_board = next_board.next()
             print(board.configuration.regen_rate)
@@ -719,7 +739,7 @@ class LogicTest(unittest.TestCase):
             print(next_board.observation)
             print(next_board)
             current_player = next_board.current_player
-            current_plantor = first(current_player.plantors)
+            current_planter = first(current_player.planters)
             opponent_collector = first(first(next_board.opponents).collectors)
 
     # Test case @1.26
@@ -729,50 +749,54 @@ class LogicTest(unittest.TestCase):
         board = create_board(size, starting_carbon, agent_count=2, random_seed=1)
         me = board.current_player
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
-        player_plantor = first(board.current_player.plantors)
-        player_plantor.next_action = WorkerAction.RIGHT
+        player_planter = first(board.current_player.planters)
+        player_planter.next_action = WorkerAction.RIGHT
         board = board.next()
-        player_plantor = first(board.current_player.plantors)
-        player_plantor.next_action = WorkerAction.UP
+        player_planter = first(board.current_player.planters)
+        player_planter.next_action = WorkerAction.UP
         board = board.next()
         # print(board.observation)
         # 种树
         next_board = board.next()
         # print(next_board.observation)
         me = next_board.current_player
-        player_plantor = first(me.plantors)
-        (r1, r2) = player_plantor.position
+        player_planter = first(me.planters)
+        (r1, r2) = player_planter.position
+        next_board.configuration['regenRate'] = 0
+        next_board.configuration['initialAbsorptionRate'] = 0
+        next_board.configuration['AbsorptionGrowthRate'] = 0
         for i in range(49):
             board = next_board
             me = board.current_player
-            player_plantor = first(me.plantors)
-            player_plantor.next_action = WorkerAction.UP
+            player_planter = first(me.planters)
+            player_planter.next_action = WorkerAction.UP
             next_board = next_board.next()
             print(board.observation)
             print("round", i)
-            # print(board.cells[(r1, r2)]._carbon)
+            print(board.cells[(r1, r2)]._carbon)
             self.assertEqual(board.cells[((r1 + 1) % size, (r2 - 1) % size)]._carbon,
-                  next_board.cells[((r1 + 1) % size, (r2 - 1) % size)]._carbon)
+                             next_board.cells[((r1 + 1) % size, (r2 - 1) % size)]._carbon)
             self.assertEqual(board.cells[((r1 + 1) % size, r2)]._carbon,
-                  next_board.cells[((r1 + 1) % size, r2)]._carbon)
+                             next_board.cells[((r1 + 1) % size, r2)]._carbon)
             self.assertEqual(board.cells[((r1 + 1) % size, (r2 + 1) % size)]._carbon,
-                  next_board.cells[((r1 + 1) % size, (r2 + 1) % size)]._carbon)
+                             next_board.cells[((r1 + 1) % size, (r2 + 1) % size)]._carbon)
             self.assertEqual(board.cells[(r1, (r2 - 1) % size)]._carbon,
                              next_board.cells[(r1, (r2 - 1) % size)]._carbon)
             self.assertEqual(board.cells[(r1, (r2 + 1) % size)]._carbon,
                              next_board.cells[(r1, (r2 + 1) % size)]._carbon)
             self.assertEqual(board.cells[((r1 - 1) % size, (r2 - 1) % size)]._carbon,
-                  next_board.cells[((r1 - 1) % size, (r2 - 1) % size)]._carbon)
+                             next_board.cells[((r1 - 1) % size, (r2 - 1) % size)]._carbon)
             self.assertEqual(board.cells[((r1 - 1) % size, r2)]._carbon,
                              next_board.cells[((r1 - 1) % size, r2)]._carbon)
             self.assertEqual(board.cells[((r1 - 1) % size, (r2 + 1) % size)]._carbon,
-                  next_board.cells[((r1 - 1) % size, (r2 + 1) % size)]._carbon)
+                             next_board.cells[((r1 - 1) % size, (r2 + 1) % size)]._carbon)
+        board.configuration['regenRate'] = 0.03
         board = next_board
         me = board.current_player
-        player_plantor = first(me.plantors)
-        player_plantor.next_action = WorkerAction.UP
+        player_planter = first(me.planters)
+        player_planter.next_action = WorkerAction.UP
         next_board = next_board.next()
         self.assertEqual(round(board.cells[((r1 + 1) % size, (r2 - 1) % size)]._carbon
                                * (1 + board.configuration.regen_rate), 3),
@@ -804,53 +828,53 @@ class LogicTest(unittest.TestCase):
         board = create_board(size, starting_carbon, agent_count=2, random_seed=1)
         me = board.current_player
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
-        player_plantor = first(board.current_player.plantors)
-        player_plantor.next_action = WorkerAction.RIGHT
+        player_planter = first(board.current_player.planters)
+        player_planter.next_action = WorkerAction.RIGHT
         board = board.next()
-        player_plantor = first(board.current_player.plantors)
-        player_plantor.next_action = WorkerAction.UP
+        player_planter = first(board.current_player.planters)
+        player_planter.next_action = WorkerAction.UP
         board = board.next()
         # 种树
         next_board = board.next()
         # print(next_board.observation)
         me = next_board.current_player
-        player_plantor = first(me.plantors)
-        (r1, r2) = player_plantor.position
+        player_planter = first(me.planters)
+        (r1, r2) = player_planter.position
         for i in range(5):
             board = next_board
             me = board.current_player
-            player_plantor = first(me.plantors)
-            player_plantor.next_action = WorkerAction.UP
+            player_planter = first(me.planters)
+            player_planter.next_action = WorkerAction.UP
             next_board = next_board.next()
             print(board.observation)
             print("round", i)
             # print(board.cells[(r1, r2)]._carbon)
             self.assertEqual(board.cells[((r1 + 1) % size, (r2 - 1) % size)]._carbon,
-                  next_board.cells[((r1 + 1) % size, (r2 - 1) % size)]._carbon)
+                             next_board.cells[((r1 + 1) % size, (r2 - 1) % size)]._carbon)
             self.assertEqual(board.cells[((r1 + 1) % size, r2)]._carbon,
-                  next_board.cells[((r1 + 1) % size, r2)]._carbon)
+                             next_board.cells[((r1 + 1) % size, r2)]._carbon)
             self.assertEqual(board.cells[((r1 + 1) % size, (r2 + 1) % size)]._carbon,
-                  next_board.cells[((r1 + 1) % size, (r2 + 1) % size)]._carbon)
+                             next_board.cells[((r1 + 1) % size, (r2 + 1) % size)]._carbon)
             self.assertEqual(board.cells[(r1, (r2 - 1) % size)]._carbon,
                              next_board.cells[(r1, (r2 - 1) % size)]._carbon)
             self.assertEqual(board.cells[(r1, (r2 + 1) % size)]._carbon,
                              next_board.cells[(r1, (r2 + 1) % size)]._carbon)
             self.assertEqual(board.cells[((r1 - 1) % size, (r2 - 1) % size)]._carbon,
-                  next_board.cells[((r1 - 1) % size, (r2 - 1) % size)]._carbon)
+                             next_board.cells[((r1 - 1) % size, (r2 - 1) % size)]._carbon)
             self.assertEqual(board.cells[((r1 - 1) % size, r2)]._carbon,
                              next_board.cells[((r1 - 1) % size, r2)]._carbon)
             self.assertEqual(board.cells[((r1 - 1) % size, (r2 + 1) % size)]._carbon,
-                  next_board.cells[((r1 - 1) % size, (r2 + 1) % size)]._carbon)
+                             next_board.cells[((r1 - 1) % size, (r2 + 1) % size)]._carbon)
             increment = (board.cells[((r1 + 1) % size, (r2 - 1) % size)]._carbon +
-                               board.cells[((r1 + 1) % size, r2)]._carbon +
-                               board.cells[((r1 + 1) % size, (r2 + 1) % size)]._carbon +
-                               board.cells[(r1, (r2 - 1) % size)]._carbon +
-                               board.cells[(r1, (r2 + 1) % size)]._carbon +
-                               board.cells[((r1 - 1) % size, (r2 - 1) % size)]._carbon +
-                               board.cells[((r1 - 1) % size, r2)]._carbon +
-                               board.cells[((r1 - 1) % size, (r2 + 1) % size)]._carbon) * board.configuration.regen_rate
+                         board.cells[((r1 + 1) % size, r2)]._carbon +
+                         board.cells[((r1 + 1) % size, (r2 + 1) % size)]._carbon +
+                         board.cells[(r1, (r2 - 1) % size)]._carbon +
+                         board.cells[(r1, (r2 + 1) % size)]._carbon +
+                         board.cells[((r1 - 1) % size, (r2 - 1) % size)]._carbon +
+                         board.cells[((r1 - 1) % size, r2)]._carbon +
+                         board.cells[((r1 - 1) % size, (r2 + 1) % size)]._carbon) * board.configuration.regen_rate
             print(increment)
             self.assertEqual(round(board.current_player.cash + increment, 2), next_board.current_player.cash)
 
@@ -861,35 +885,38 @@ class LogicTest(unittest.TestCase):
         board = create_board(size, starting_carbon, agent_count=2, random_seed=2)
         me = board.current_player
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         opponents = board.opponents
         for opponent in opponents:
             for recrtCenter in opponent.recrtCenters:
                 recrtCenter.next_action = RecrtCenterAction.RECCOLLECTOR
         board = board.next()
-        player_plantor = first(board.current_player.plantors)
-        player_plantor.next_action = WorkerAction.RIGHT
+        player_planter = first(board.current_player.planters)
+        player_planter.next_action = WorkerAction.RIGHT
         opponent_collector = first(first(board.opponents).collectors)
         opponent_collector.next_action = WorkerAction.DOWN
         board = board.next()
-        player_plantor = first(board.current_player.plantors)
-        player_plantor.next_action = WorkerAction.UP
+        player_planter = first(board.current_player.planters)
+        player_planter.next_action = WorkerAction.UP
         opponent_collector = first(first(board.opponents).collectors)
         opponent_collector.next_action = WorkerAction.DOWN
         board = board.next()
         # 种树
         next_board = board.next()
         # 树的位置CO2消失
-        self.assertEqual(next_board.cells[first(next_board.current_player.plantors).position]._carbon, 0)
+        self.assertEqual(next_board.cells[first(next_board.current_player.planters).position]._carbon, 0)
         # 捕碳员捕碳收益
-        self.assertEqual(round(board.cells[first(first(board.opponents).collectors).position]._carbon *
-                               next_board.configuration.collect_rate, 3),
-                         first(first(next_board.opponents).collectors)._carbon)
+        collect_rate = max(board.configuration.initial_collect_rate -
+                           len(first(board.opponents).collectors) * board.configuration.collect_decrease_rate, 0)
+        self.assertAlmostEqual(round(board.cells[first(first(board.opponents).collectors).position]._carbon *
+                                     collect_rate, 3),
+                               first(first(next_board.opponents).collectors)._carbon, 2)
         next_next_board = next_board.next()
         # 树的收益需排除捕碳员所占格子
         me = next_board.current_player
-        player_plantor = first(me.plantors)
-        (r1, r2) = player_plantor.position
+        player_planter = first(me.planters)
+        (r1, r2) = player_planter.position
+        absorption_rate = next_board.configuration.initial_absorption_rate + first(me.trees).age * next_board.configuration.absorption_growth_rate
         increment = (next_board.cells[((r1 + 1) % size, (r2 - 1) % size)]._carbon +
                      # next_board.cells[((r1 + 1) % size, r2)]._carbon +
                      next_board.cells[((r1 + 1) % size, (r2 + 1) % size)]._carbon +
@@ -897,7 +924,7 @@ class LogicTest(unittest.TestCase):
                      next_board.cells[(r1, (r2 + 1) % size)]._carbon +
                      next_board.cells[((r1 - 1) % size, (r2 - 1) % size)]._carbon +
                      next_board.cells[((r1 - 1) % size, r2)]._carbon +
-                     next_board.cells[((r1 - 1) % size, (r2 + 1) % size)]._carbon) * next_board.configuration.regen_rate
+                     next_board.cells[((r1 - 1) % size, (r2 + 1) % size)]._carbon) * absorption_rate
         self.assertEqual(round(next_board.current_player.cash + increment, 2), next_next_board.current_player.cash)
 
     # Test case @1.29
@@ -910,37 +937,42 @@ class LogicTest(unittest.TestCase):
         # board = create_board(size, starting_carbon, agent_count=2, random_seed=1)
         me = board.current_player
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         opponents = board.opponents
         for opponent in opponents:
             for recrtCenter in opponent.recrtCenters:
-                recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+                recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
-        player_plantor = first(board.current_player.plantors)
-        player_plantor.next_action = WorkerAction.RIGHT
-        opponent_plantor = first(first(board.opponents).plantors)
-        opponent_plantor.next_action = WorkerAction.UP
+        player_planter = first(board.current_player.planters)
+        player_planter.next_action = WorkerAction.RIGHT
+        opponent_planter = first(first(board.opponents).planters)
+        opponent_planter.next_action = WorkerAction.UP
         board = board.next()
         # 种树
         board = board.next()
         (p1, p2) = first(board.current_player.trees).position
+        my_tree_age = first(board.current_player.trees).age
+        my_tree_absorption_rate = board.configuration.initial_absorption_rate + my_tree_age * board.configuration.absorption_growth_rate
         (o1, o2) = first(first(board.opponents).trees).position
+        opponent_tree_age = first(first(board.opponents).trees).age
+        opponent_tree_absorption_rate = board.configuration.initial_absorption_rate + opponent_tree_age * board.configuration.absorption_growth_rate
+
         next_board = board.next()
         player_increment = (board.cells[((p1 - 1) % size, (p2 + 1) % size)]._carbon +
                             board.cells[(p1 % size, (p2 + 1) % size)]._carbon +
                             board.cells[((p1 + 1) % size, (p2 + 1) % size)]._carbon +
                             board.cells[((p1 - 1) % size, p2 % size)]._carbon +
                             board.cells[((p1 - 1) % size, (p2 - 1) % size)]._carbon +
-                            board.cells[(p1 % size, (p2 - 1) % size)]._carbon / 2 +
-                            board.cells[((p1 + 1) % size, p2 % size)]._carbon / 2) * board.configuration.regen_rate
+                            board.cells[(p1 % size, (p2 - 1) % size)]._carbon +
+                            board.cells[((p1 + 1) % size, p2 % size)]._carbon) * my_tree_absorption_rate
         self.assertEqual(round(board.current_player.cash + player_increment, 2), next_board.current_player.cash)
         opponent_increment = (board.cells[((o1 + 1) % size, (o2 - 1) % size)]._carbon +
                               board.cells[(o1 % size, (o2 - 1) % size)]._carbon +
                               board.cells[((o1 - 1) % size, (o2 - 1) % size)]._carbon +
                               board.cells[((o1 + 1) % size, o2 % size)]._carbon +
                               board.cells[((o1 + 1) % size, (o2 + 1) % size)]._carbon +
-                              board.cells[(o1 % size, (o2 + 1) % size)]._carbon / 2 +
-                              board.cells[((o1 - 1) % size, o2 % size)]._carbon / 2) * board.configuration.regen_rate
+                              board.cells[(o1 % size, (o2 + 1) % size)]._carbon +
+                              board.cells[((o1 - 1) % size, o2 % size)]._carbon) * opponent_tree_absorption_rate
         self.assertEqual(round(first(board.opponents).cash + opponent_increment, 2), first(next_board.opponents).cash)
 
         print(board)
@@ -954,28 +986,28 @@ class LogicTest(unittest.TestCase):
         board = Board(env.reset(2)[0].observation, env.configuration)
         me = board.current_player
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         opponents = board.opponents
         for opponent in opponents:
             for recrtCenter in opponent.recrtCenters:
-                recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+                recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
-        player_plantor = first(board.current_player.plantors)
-        player_plantor.next_action = WorkerAction.RIGHT
-        opponent_plantor = first(first(board.opponents).plantors)
-        opponent_plantor.next_action = WorkerAction.UP
+        player_planter = first(board.current_player.planters)
+        player_planter.next_action = WorkerAction.RIGHT
+        opponent_planter = first(first(board.opponents).planters)
+        opponent_planter.next_action = WorkerAction.UP
         board = board.next()
         # 种树
         board = board.next()
-        player_plantor = first(board.current_player.plantors)
-        player_plantor.next_action = WorkerAction.DOWN
+        player_planter = first(board.current_player.planters)
+        player_planter.next_action = WorkerAction.DOWN
         (p1, p2) = first(board.current_player.trees).position
         (o1, o2) = first(first(board.opponents).trees).position
         board = board.next()
-        player_plantor = first(board.current_player.plantors)
-        player_plantor.next_action = WorkerAction.DOWN
+        player_planter = first(board.current_player.planters)
+        player_planter.next_action = WorkerAction.DOWN
         board = board.next()
-        (p3, p4) = first(board.current_player.plantors).position
+        (p3, p4) = first(board.current_player.planters).position
         board = board.next()
         next_board = board.next()
         player_tree_one = (board.cells[((p1 - 1) % size, (p2 + 1) % size)]._carbon +
@@ -993,7 +1025,7 @@ class LogicTest(unittest.TestCase):
                            board.cells[(p3 % size, (p4 - 1) % size)]._carbon +
                            board.cells[((p3 + 1) % size, (p4 - 1) % size)]._carbon) * board.configuration.regen_rate
         print(round(board.current_player.cash + player_tree_one + player_tree_two, 2),
-                         next_board.current_player.cash)
+              next_board.current_player.cash)
         opponent_tree = (board.cells[((o1 + 1) % size, (o2 - 1) % size)]._carbon +
                          board.cells[(o1 % size, (o2 - 1) % size)]._carbon / 2 +
                          board.cells[((o1 + 1) % size, o2 % size)]._carbon +
@@ -1053,9 +1085,9 @@ class LogicTest(unittest.TestCase):
     def test_recworker_count_limit(self):
         size = 7
         rec_cost = 5
-        env = make("carbon", configuration={"size": size, "recPlantorCost": rec_cost, "recCollectorCost": rec_cost,
+        env = make("carbon", configuration={"size": size, "recPlanterCost": rec_cost, "recCollectorCost": rec_cost,
                                             "workerLimit": 5})
-        board = Board(env.reset(1)[0].observation, env.configuration)
+        board = Board(env.reset(2)[0].observation, env.configuration)
         me = board.current_player
         for recrtCenter in me.recrtCenters:
             recrtCenter.next_action = RecrtCenterAction.RECCOLLECTOR
@@ -1076,27 +1108,28 @@ class LogicTest(unittest.TestCase):
         for worker in me.collectors:
             worker.next_action = WorkerAction.UP
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
         me = board.current_player
         for collector in me.collectors:
             collector.next_action = WorkerAction.UP
-        for plantor in me.plantors:
-            plantor.next_action = WorkerAction.RIGHT
+        for planter in me.planters:
+            planter.next_action = WorkerAction.RIGHT
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         board = board.next()
         me = board.current_player
         for collector in me.collectors:
             collector.next_action = WorkerAction.UP
-        for plantor in me.plantors:
-            plantor.next_action = WorkerAction.RIGHT
+        for planter in me.planters:
+            planter.next_action = WorkerAction.RIGHT
         for recrtCenter in me.recrtCenters:
-            recrtCenter.next_action = RecrtCenterAction.RECPLANTOR
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
         next_board = board.next()
         self.assertEqual(len(board.workers), len(next_board.workers))
         print(board)
         print(next_board)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -4,9 +4,10 @@ import traceback
 
 
 def log(info:str):
-    a = open("log", "a", encoding="utf-8")
-    a.write(info)
-    a.close()
+    pass
+    # a = open("log", "a", encoding="utf-8")
+    # a.write(info)
+    # a.close()
 
 def distance(pos1: Point, pos2: Point, size:int) -> int:
     xs = abs(pos1.x - pos2.x)
