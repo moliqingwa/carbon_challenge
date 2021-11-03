@@ -135,9 +135,19 @@ class Configuration(zerosum_env.helpers.Configuration):
         return self["recCollectorCost"]
 
     @property
+    def rec_collector_increase_cost(self) -> int:
+        """The increase amount of recruitment center to recruit a new collector."""
+        return self["recCollectorIncreaseCost"]
+
+    @property
     def rec_planter_cost(self) -> int:
         """The amount of recruitment center to recruit a new planter."""
         return self["recPlanterCost"]
+
+    @property
+    def rec_planter_increase_cost(self) -> int:
+        """The increase amount of recruitment center to recruit a new planter."""
+        return self["recPlanterIncreaseCost"]
 
     @property
     def planter_limit(self) -> int:
@@ -171,8 +181,8 @@ class Configuration(zerosum_env.helpers.Configuration):
 
     @property
     def absorption_growth_rate(self) -> float:
-        """The absorption growth rate of the tree"""
-        return self["AbsorptionGrowthRate"]
+        """The max absorption rate of the tree (For cell: init_rate + life * growth_rate)"""
+        return self["absorptionGrowthRate"]
 
     @property
     def start_pos_offset(self) -> float:
@@ -396,6 +406,14 @@ class Worker:
     @property
     def occupation(self) -> Optional[Occupation]:
         return self._occupation
+
+    @property
+    def is_collector(self) -> bool:
+        return self._occupation == Occupation.COLLECTOR
+
+    @property
+    def is_planter(self) -> bool:
+        return self._occupation == Occupation.PLANTER
 
     @property
     def position(self) -> Point:
@@ -891,36 +909,41 @@ class Board:
         # Create a copy of the board to modify so we don't affect the current board
         board = deepcopy(self)
         configuration = board.configuration
-        rec_collector_cost = configuration.rec_collector_cost
-        rec_planter_cost = configuration.rec_planter_cost
 
-        # 计算当前轮
+        # 计算当前轮招募工人的价格
+        rec_collector_cost = configuration.rec_collector_cost + \
+                             len(board.collectors) * configuration.rec_collector_increase_cost
+        rec_planter_cost = configuration.rec_planter_cost + \
+                           len(board.planters) * configuration.rec_planter_increase_cost
+
+        # 计算当前轮树的种植价格
         plant_cost = configuration.plant_cost
         plant_inflation_rate = configuration.plant_inflation_rate
         alive_tree_count_in_market = sum([tree.age < configuration.tree_lifespan
                                           for player in board.players.values() for tree in player.trees])
         current_plant_cost = plant_cost + alive_tree_count_in_market * plant_inflation_rate
 
-        # Process actions and store the results in the workers and recrtCenter lists for collision checking
+        # 计算玩家指令(转化中心+种树员+捕碳员)、计算树龄
         disappeared_tree_flag = {}
         for player in board.players.values():
-
             # 处理玩家的转化中心发出的指令
             for recrtCenter in player.recrtCenters:
                 # 招募捕碳员指令
-                if recrtCenter.next_action == RecrtCenterAction.RECCOLLECTOR and player.cash >= rec_collector_cost and len(
-                        player.workers) < configuration.worker_limit:  # and len(player.collectors) < configuration.collector_limit  #  暂时不控制捕碳员的数量
+                if recrtCenter.next_action == RecrtCenterAction.RECCOLLECTOR and \
+                        player.cash >= rec_collector_cost and len(player.workers) < configuration.worker_limit:
+                    # and len(player.collectors) < configuration.collector_limit  #  暂时不控制捕碳员的数量
                     # Handle RECCOLLECTOR actions
-                    player._cash = round(player._cash - rec_collector_cost, 2)
-                    board._add_worker(
-                        Collector(WorkerId(new_worker_id(player.id)), recrtCenter.position, 0, player.id, board))
+                    player._cash = max(player._cash - rec_collector_cost, 0)
+                    board._add_worker(Collector(WorkerId(new_worker_id(player.id)),
+                                                recrtCenter.position, 0, player.id, board))
                 # 招募种树员指令
-                if recrtCenter.next_action == RecrtCenterAction.RECPLANTER and player.cash >= rec_planter_cost and len(
-                        player.workers) < configuration.worker_limit:  # and len(player.planters) < configuration.planter_limit  # 暂时不控制种树员的数量
+                if recrtCenter.next_action == RecrtCenterAction.RECPLANTER and \
+                        player.cash >= rec_planter_cost and len(player.workers) < configuration.worker_limit:
+                    # and len(player.planters) < configuration.planter_limit  # 暂时不控制种树员的数量
                     # Handle RECPLANTER actions
-                    player._cash = round(player._cash - rec_planter_cost, 2)
-                    board._add_worker(
-                        Planter(WorkerId(new_worker_id(player.id)), recrtCenter.position, 0, player.id, board))
+                    player._cash = max(player._cash - rec_planter_cost, 0)
+                    board._add_worker(Planter(WorkerId(new_worker_id(player.id)),
+                                              recrtCenter.position, 0, player.id, board))
                 # Clear the recrtCenter's action so it doesn't repeat the same action automatically
                 recrtCenter.next_action = None
 
@@ -929,7 +952,7 @@ class Board:
                 if worker.next_action in WorkerAction.moves():
                     worker.cell._worker_id = None
                     worker._position = worker.position.translate(worker.next_action.to_point(), configuration.size)
-                    worker._carbon = round(worker._carbon * (1 - board.configuration.move_cost), 2)
+                    worker._carbon = worker._carbon * (1 - board.configuration.move_cost)
 
                     # We don't set the new cell's worker_id here as it would be overwritten by another worker in the case of collision.
                     # Later we'll iterate through all workers and re-set the cell._worker_id as appropriate.
@@ -948,7 +971,7 @@ class Board:
             assert player.cash >= 0
 
         # 预处理
-        surround_tree_flag = {}
+        surround_tree_flag = {}  # key: 坐标, value: 0-表示树不可吸收, >0-表示树可以吸收
         for tree in board.trees.values():
             cell = tree.cell
             for surround_tree in tree.surround():
@@ -961,14 +984,15 @@ class Board:
                 # 判断树周围是否有人
                 surround_tree_cell = board.cells[surround_tree_position]
                 if surround_tree_cell.tree_id is None \
-                        and (surround_tree_cell.worker_id is None \
-                             or (surround_tree_cell.worker.occupation == Occupation.PLANTER \
+                        and (surround_tree_cell.worker_id is None
+                             or (surround_tree_cell.worker.occupation == Occupation.PLANTER
                                  or (surround_tree_cell.worker.occupation == Occupation.COLLECTOR
                                      and surround_tree_cell.worker.next_action is not None))):
                     # 周围不存在树 且 (周围不存在人 或 周围存在种树员 或 周围存在捕碳员但不是停留 )
                     surround_tree_flag[surround_tree_position] = surround_tree_flag[surround_tree_position] + 1
 
         # Collect carbon from cells into trees
+        worker_surround_opponent_trees = defaultdict(list)  # key: 队伍A的worker_id, value: (队伍B的树, 树吸收率)
         tree_absorption_t0 = configuration.initial_absorption_rate
         tree_absorption_growth = configuration.absorption_growth_rate
         board_carbon_reduction = defaultdict(float)
@@ -978,23 +1002,29 @@ class Board:
             for surround_tree in tree.surround():
                 surround_tree_position = tree.cell.position.translate(surround_tree, configuration.size)
                 surround_tree_cell = board.cells[surround_tree_position]
+
+                if surround_tree_cell.worker is not None and \
+                        surround_tree_cell.worker.is_collector and \
+                        surround_tree_cell.worker.player_id != tree.player_id:  # 树的周边有对方的捕碳员, 记录树和吸收率
+                    worker_surround_opponent_trees[surround_tree_cell.worker_id].append((tree, tree_absorption_rate))
+
                 if surround_tree_cell.carbon > 0 and \
                         surround_tree_position in surround_tree_flag and \
-                        surround_tree_flag[surround_tree_position] > 0:
+                        surround_tree_flag[surround_tree_position] > 0:  # 树吸收周边CO2
                     absorbed_co2 = surround_tree_cell.carbon * tree_absorption_rate
                     tree_carbon += absorbed_co2
                     board_carbon_reduction[surround_tree_position] += absorbed_co2
 
-            tree.player._cash = round(tree_carbon + tree.player._cash, 2)
-            board._add_tree_dict(tree, self._trees_dict[tree.id][0], round(tree_carbon, 2))
+            tree.player._cash += tree_carbon
+            board._add_tree_dict(tree, self._trees_dict[tree.id][0], tree_carbon)
 
         # 树周围 co2被净化
-        for surround_tree_position in surround_tree_flag.keys():
+        for surround_tree_position, absorption_flag in surround_tree_flag.items():
             surround_tree_cell = board.cells[surround_tree_position]
             # 周围单元格的co2大于0，并且，单元格的碳可以被吸收
-            if surround_tree_cell.carbon > 0 and surround_tree_flag[surround_tree_position] > 0:
+            if surround_tree_cell.carbon > 0 and absorption_flag > 0:
                 current_value = surround_tree_cell.carbon - board_carbon_reduction[surround_tree_position]
-                surround_tree_cell._carbon = round(max(current_value, 0), 3)
+                surround_tree_cell._carbon = max(current_value, 0)
 
         def resolve_collision(workers: List[Worker]) -> Tuple[Optional[Worker], List[Worker]]:
             """
@@ -1005,6 +1035,15 @@ class Board:
                 return workers[0], []
 
             # There was a tie for least carbon, all are deleted
+            collectors_by_carbon = group_by(filter(lambda worker: worker.is_collector, workers),
+                                            lambda worker: worker.carbon)
+            if not collectors_by_carbon:  # 没有捕碳员
+                return None, workers
+            smallest_carbon = min(collectors_by_carbon.keys())
+            smallest_collectors = collectors_by_carbon[smallest_carbon]
+            if len(smallest_collectors) == 1:
+                winner = smallest_collectors[0]
+                return winner, [worker for worker in workers if worker != winner]
             return None, workers
 
         # Check for worker to worker collisions
@@ -1012,25 +1051,25 @@ class Board:
         worker_collision_groups = group_by(board.workers.values(), lambda worker: worker.position)
         for position, collided_workers in worker_collision_groups.items():
             winner, deleted = resolve_collision(collided_workers)
+            collisions_flag[position] = len(deleted) > 0  # 若发生碰撞,标记为True;反之,为False
+
+            is_winner_collector = False
             if winner is not None:
                 winner.cell._worker_id = winner.id
-
-            # 记录发生碰撞的位置
-            if len(deleted) > 0:
-                collisions_flag[position] = True
+                is_winner_collector = winner.is_collector
 
             for worker in deleted:
-                if worker.cell.tree_id is not None:
+                if is_winner_collector:  # 胜者为捕碳员,缴获对方身上的CO2
+                    winner._carbon += worker.carbon
+                elif worker.cell.tree_id is not None:
                     # 碰撞处存在树，则碰撞方的co2被树全量吸收，即被树的拥有方全量吸收
-                    worker.cell.tree.player._cash = round(worker.cell.tree.player._cash + worker.carbon, 2)
+                    worker.cell.tree.player._cash += worker.carbon
                 elif worker.cell.recrtCenter_id is not None:
                     # 碰撞处存在转化中心，则碰撞方的co2被转化中心全量吸收，即被转化中心的拥有方全量吸收
-                    worker.cell.recrtCenter.player._cash = round(
-                        worker.cell.recrtCenter.player._cash + worker.carbon, 2)
+                    worker.cell.recrtCenter.player._cash += worker.carbon
                 else:
                     # 碰撞处不存在树，则全掉落在格子处；若格子在树的周围，则树在下一轮才吸收
-                    worker.cell._carbon = min(round(worker.cell._carbon + worker.carbon, 2),
-                                              configuration.max_cell_carbon)
+                    worker.cell._carbon = min(worker.cell._carbon + worker.carbon, configuration.max_cell_carbon)
                 # 从地图中删除工人
                 board._delete_worker(worker)
 
@@ -1044,14 +1083,13 @@ class Board:
             worker = recrtCenter.cell.worker
             if worker is not None and worker.player_id == recrtCenter.player_id:
                 # 捕碳员 回到转化中心
-                if worker.occupation == Occupation.COLLECTOR and worker._carbon >= configuration.smelt_cost:
-                    recrtCenter.player._cash = round(
-                        recrtCenter.player._cash + worker._carbon - configuration.smelt_cost, 2)
+                if worker.is_collector and worker._carbon >= configuration.smelt_cost:
+                    recrtCenter.player._cash += worker._carbon - configuration.smelt_cost
                     worker._carbon = 0
 
         # Collect carbon from cells into workers
         player_collect_rate = {player_id: max(configuration.initial_collect_rate -
-                                          len(player.collectors) * configuration.collect_decrease_rate, 0)
+                                              len(player.collectors) * configuration.collect_decrease_rate, 0)
                                for player_id, player in board.players.items()}
         for worker in board.workers.values():
             cell = worker.cell
@@ -1059,27 +1097,38 @@ class Board:
             if worker.next_action not in WorkerAction.moves():
                 if cell.tree_id is None and cell.recrtCenter_id is None:
                     # 此处 无树 且无转化中心
-                    delta_carbon = cell.carbon * player_collect_rate.get(worker.player_id, 0)
+                    delta_carbon = cell.carbon * player_collect_rate.get(worker.player_id, 0)  # 捕碳员的捕碳量
 
-                    if worker.occupation == Occupation.PLANTER and worker.player.cash >= current_plant_cost:
-                        # 此处 当前停留方是种树人 且当前停留方金额超过种树金额
-                        worker.player._cash = round(worker.player._cash - current_plant_cost, 2)
-                        new_tree = Tree(TreeId(new_tree_id(worker.player_id)), worker.position, 1, worker.player_id,
-                                        board)
+                    if worker.is_planter and worker.player.cash >= current_plant_cost:
+                        # 此处 当前停留方是种树人 且当前停留方金额超过种树金额 (种树逻辑)
+                        worker.player._cash = worker.player._cash - current_plant_cost
+                        new_tree = Tree(TreeId(new_tree_id(worker.player_id)),
+                                        worker.position, 1, worker.player_id, board)
                         board._add_tree(new_tree)
                         board._add_tree_dict(new_tree, worker.id, 0)
                         cell._carbon = 0
 
-                    elif delta_carbon > 0 and worker.occupation == Occupation.COLLECTOR:
-                        # 此处 co2数目大于0 且当前停留方是捕碳人
-                        worker._carbon = round(worker._carbon + delta_carbon, 2)
-                        cell._carbon = max(round(cell._carbon - delta_carbon, 3), 0)
+                    elif worker.is_collector and delta_carbon > 0:
+                        # 此处 co2数目大于0 且当前停留方是捕碳员 (捕碳逻辑)
+                        cell._carbon = max(cell._carbon - delta_carbon, 0)
+                        tmp_worker_carbon = worker.carbon + delta_carbon
+
+                        # 被周边对手树净化
+                        absorbed_carbon = 0
+                        for tree, absorption_rate in worker_surround_opponent_trees.get(worker.id, []):
+                            tree_carbon = tmp_worker_carbon * absorption_rate  # 树吸收捕碳员携带的CO2量
+                            tree.player._cash += tree_carbon
+                            board._add_tree_dict(tree, self._trees_dict[tree.id][0], tree_carbon)
+                            absorbed_carbon += tree_carbon
+                        worker._carbon = max(tmp_worker_carbon - absorbed_carbon, 0)
 
                 elif cell.tree_id is not None and cell.recrtCenter_id is None:
-                    # 此处 有树 且无转化中心
-                    if cell.tree.player_id != worker.player_id and worker.player.cash >= configuration.seize_cost:
-                        # 此处 当前停留方不是树的归属方 且当前停留方金额超过抢树金额
-                        worker.player._cash = round(worker.player._cash - configuration.seize_cost, 2)
+                    # 此处 有树 且无转化中心 (抢树逻辑)
+                    if cell.tree.player_id != worker.player_id and \
+                            worker.occupation == Occupation.PLANTER and \
+                            worker.player.cash >= configuration.seize_cost:
+                        # 此处 当前停留方不是树的归属方,且为种树员,且当前停留方金额超过抢树金额
+                        worker.player._cash = worker.player._cash - configuration.seize_cost
                         org_tree_id, org_tree_age = cell.tree_id, cell.tree.age
                         board._delete_tree(cell.tree)
                         new_tree = Tree(org_tree_id, cell.position, org_tree_age, worker.player_id, board)
@@ -1090,9 +1139,12 @@ class Board:
         for cell in board.cells.values():
             if (cell.worker_id is None or cell.worker.next_action in WorkerAction.moves()) and \
                     cell.position not in collisions_flag and \
-                    cell.tree_id is None and cell.position not in disappeared_tree_flag and cell.position not in surround_tree_flag:
+                    cell.tree_id is None and \
+                    cell.position not in disappeared_tree_flag and \
+                    cell.position not in surround_tree_flag:
                 # 此处（当前格子中无人 或者 当前格子中有人但不是停留动作）且未发生碰撞 且无树 且树非此轮消失 且非树周围
-                next_carbon = round(cell.carbon * (1 + configuration.regen_rate), 3)
+                next_carbon = cell.carbon * (1 + configuration.regen_rate)
+                # TODO: 是否需要随机生成新的碳点 ???
                 cell._carbon = min(next_carbon, configuration.max_cell_carbon)
                 # Lets just check and make sure.
 
@@ -1101,6 +1153,14 @@ class Board:
         # Clear the worker's action so it doesn't repeat the same action automatically
         for worker in board.workers.values():
             worker.next_action = None
+
+        # 玩家金额仅保留2位小数
+        for player in board.players.values():
+            player._cash = round(player._cash, 2)
+
+        # 地图保留3位小数
+        for cell in board.cells.values():
+            cell._carbon = round(cell._carbon, 3)
 
         board._step += 1
 

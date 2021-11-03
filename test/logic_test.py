@@ -766,7 +766,7 @@ class LogicTest(unittest.TestCase):
         (r1, r2) = player_planter.position
         next_board.configuration['regenRate'] = 0
         next_board.configuration['initialAbsorptionRate'] = 0
-        next_board.configuration['AbsorptionGrowthRate'] = 0
+        next_board.configuration['absorptionGrowthRate'] = 0
         for i in range(49):
             board = next_board
             me = board.current_player
