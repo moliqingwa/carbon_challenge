@@ -1130,6 +1130,43 @@ class LogicTest(unittest.TestCase):
         print(board)
         print(next_board)
 
+    def test_planter_plant_trees(self):
+        size = 7
+        rec_cost = 5
+        plant_cost = 5
+        plant_inflation_rate = 5
+        env = make("carbon", configuration={"size": size, "recPlanterCost": rec_cost, "recCollectorCost": rec_cost,
+                                            "workerLimit": 5,
+                                            "initialAbsorptionRate": 0, "absorptionGrowthRate": 0,
+                                            "plantCost": plant_cost, "plantInflationRate": plant_inflation_rate})
+        board = Board(env.reset(2)[0].observation, env.configuration)
+        cash = board.current_player.cash
+        me = board.current_player
+        for recrtCenter in me.recrtCenters:
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
+        board = board.next()
+        cash -= rec_cost
+        self.assertEqual(board.current_player.cash, cash)
+
+        first(board.current_player.planters).next_action = WorkerAction.UP
+        board = board.next()
+        board = board.next()  # 种树
+        board = board.next()
+        cash -= plant_cost
+        self.assertEqual(board.current_player.cash, cash)
+
+        first(board.current_player.planters).next_action = WorkerAction.UP
+        board = board.next()
+        board = board.next()  # 种树
+        cash -= (plant_cost + plant_inflation_rate)
+        self.assertEqual(board.current_player.cash, cash)
+        for _ in range(50):  # 50轮后重新种树
+            board = board.next()
+        cash -= plant_cost
+        self.assertEqual(board.current_player.cash, cash)
+
+        first(me.planters).next_action = WorkerAction.UP
+
 
 if __name__ == '__main__':
     unittest.main()
