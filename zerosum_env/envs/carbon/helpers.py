@@ -1043,6 +1043,7 @@ class Board:
                     worker._carbon = 0
 
         # 计算工人的停留指令(种树员种树/抢树,捕碳员捕碳)
+        new_born_tree_ids = set()  # 本轮新种的树
         player_collect_rate = {player_id: max(configuration.initial_collect_rate -
                                               len(player.collectors) * configuration.collect_decrease_rate, 0)
                                for player_id, player in board.players.items()}
@@ -1062,6 +1063,7 @@ class Board:
                         board._add_tree(new_tree)
                         board._add_tree_dict(new_tree, worker.id, 0)
                         cell._carbon = 0
+                        new_born_tree_ids.add(new_tree.id)
                     elif worker.is_collector and delta_carbon > 0:
                         # 此处 co2数目大于0 且当前停留方是捕碳员 (捕碳逻辑)
                         cell._carbon = max(cell._carbon - delta_carbon, 0)
@@ -1106,6 +1108,9 @@ class Board:
         board_carbon_reduction = defaultdict(float)  # 树吸收周边CO2的数量 (仅格子CO2), key: pos, value: co2
         worker_carbon_reduction = defaultdict(float)  # 树吸收周边对手捕碳员携带CO2的数量, key: worker_id, value: co2
         for tree in board.trees.values():
+            if tree.id in new_born_tree_ids:  # 本轮种植的树, 不参与计算
+                continue
+
             tree_absorption_rate = tree_absorption_t0 + (tree.age - 1) * tree_absorption_growth  # last turn age !!!
 
             tree_carbon = 0  # 树吸收CO2总量
