@@ -7,12 +7,13 @@ def first(iterable):
     return next(iter(iterable))
 
 
-def create_board(size=3, starting_carbon=0, agent_count=2, random_seed=0, regenRate=0.03):
+def create_board(size=3, starting_carbon=0, agent_count=2, random_seed=0, regenRate=0.03, startPosOffset=2):
     env = make("carbon", configuration={
         "size": size,
         "startingCarbon": starting_carbon,
         "randomSeed": random_seed,
         "regenRate": regenRate,
+        "startPosOffset": startPosOffset,
     })
     return Board(env.reset(agent_count)[0].observation, env.configuration)
 

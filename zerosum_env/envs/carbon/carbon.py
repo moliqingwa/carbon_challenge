@@ -312,7 +312,7 @@ def interpreter(state, env):
                 agent.reward = board.step - board.configuration.episode_steps - 1
 
         if agent.status != "ACTIVE" and agent.status != "DONE":
-            obs.players[index] = [0, {}, {}, {}]
+            obs.players[index] = [0, recrtCenters, {}, {}]
 
     # Check if done (< 2 players and num_agents > 1)
     if len(state) > 1 and sum(1 for agent in state if agent.status == "ACTIVE") < 2:
