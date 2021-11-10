@@ -95,15 +95,21 @@
       "minimum": 0
     },
     "plantInflationRate": {
-      "description": "The extra amount of planter to plant a tree. Real cost is (plantCost + n * plantInflationRate).",
+      "description": "The extra amount of planter to plant a tree after a certain number. Real cost is (plantCost + n * plantInflationRate).",
       "type": "number",
       "default": 5,
       "minimum": 0
     },
+    "playerTreeProtectiveNumber": {
+      "description": "The cost of planter to plant a tree is `plantCost` if not exceeding this number.",
+      "type": "integer",
+      "default": 0,
+      "minimum": -1
+    },
     "co2FrmWithered": {
       "description": "The amount of carbon from withered tree.",
       "type": "integer",
-      "default": 20,
+      "default": 30,
       "minimum": 0
     },
     "seizeCost": {
@@ -115,7 +121,7 @@
     "initialCollectRate": {
       "description": "The initial rate of collector collected from a cell by not moving.",
       "type": "number",
-      "default": 0.25,
+      "default": 0.3,
       "minimum": 0
     },
     "collectDecreaseRate": {
@@ -135,15 +141,15 @@
       "type": "integer",
       "default": 50
     },
-    "initialAbsorptionRate": {
-      "description": "The initial absorption rate of the tree",
+    "cellAbsorptionRate": {
+      "description": "The absorption rate of the tree from cell",
       "type": "number",
-      "default": 0.05
+      "default": 0.0375
     },
-    "absorptionGrowthRate": {
-      "description": "The max absorption rate of the tree (For cell: init_rate + life * growth_rate)",
+    "collectorAbsorptionRate": {
+      "description": "The absorption rate of the tree from collector nearby",
       "type": "number",
-      "default": 0.001
+      "default": 0.1
     },
     "randomSeed": {
       "description": "The seed used to initialize the random number generator.",
@@ -162,7 +168,7 @@
   "reward": {
     "description": "The amount of player owned money (equal to players[index][0]) if the player has not been eliminated, else step_eliminated - episode_steps - 1.",
     "type": "integer",
-    "default": 50
+    "default": 80
   },
   "observation": {
     "carbon": {

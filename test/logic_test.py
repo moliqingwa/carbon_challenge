@@ -765,8 +765,8 @@ class LogicTest(unittest.TestCase):
         player_planter = first(me.planters)
         (r1, r2) = player_planter.position
         next_board.configuration['regenRate'] = 0
-        next_board.configuration['initialAbsorptionRate'] = 0
-        next_board.configuration['absorptionGrowthRate'] = 0
+        next_board.configuration['cellAbsorptionRate'] = 0
+        next_board.configuration['collectorAbsorptionRate'] = 0
         for i in range(49):
             board = next_board
             me = board.current_player
@@ -916,7 +916,7 @@ class LogicTest(unittest.TestCase):
         me = next_board.current_player
         player_planter = first(me.planters)
         (r1, r2) = player_planter.position
-        absorption_rate = next_board.configuration.initial_absorption_rate + first(me.trees).age * next_board.configuration.absorption_growth_rate
+        absorption_rate = next_board.configuration.cell_absorption_rate
         increment = (next_board.cells[((r1 + 1) % size, (r2 - 1) % size)]._carbon +
                      # next_board.cells[((r1 + 1) % size, r2)]._carbon +
                      next_board.cells[((r1 + 1) % size, (r2 + 1) % size)]._carbon +
@@ -952,10 +952,10 @@ class LogicTest(unittest.TestCase):
         board = board.next()
         (p1, p2) = first(board.current_player.trees).position
         my_tree_age = first(board.current_player.trees).age
-        my_tree_absorption_rate = board.configuration.initial_absorption_rate + my_tree_age * board.configuration.absorption_growth_rate
+        my_tree_absorption_rate = board.configuration.cell_absorption_rate + my_tree_age * board.configuration.absorption_growth_rate
         (o1, o2) = first(first(board.opponents).trees).position
         opponent_tree_age = first(first(board.opponents).trees).age
-        opponent_tree_absorption_rate = board.configuration.initial_absorption_rate + opponent_tree_age * board.configuration.absorption_growth_rate
+        opponent_tree_absorption_rate = board.configuration.cell_absorption_rate + opponent_tree_age * board.configuration.absorption_growth_rate
 
         next_board = board.next()
         player_increment = (board.cells[((p1 - 1) % size, (p2 + 1) % size)]._carbon +
@@ -1137,7 +1137,7 @@ class LogicTest(unittest.TestCase):
         plant_inflation_rate = 5
         env = make("carbon", configuration={"size": size, "recPlanterCost": rec_cost, "recCollectorCost": rec_cost,
                                             "workerLimit": 5,
-                                            "initialAbsorptionRate": 0, "absorptionGrowthRate": 0,
+                                            "cellAbsorptionRate": 0, "collectorAbsorptionRate": 0,
                                             "plantCost": plant_cost, "plantInflationRate": plant_inflation_rate})
         board = Board(env.reset(2)[0].observation, env.configuration)
         cash = board.current_player.cash

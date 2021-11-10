@@ -96,8 +96,13 @@ class Configuration(zerosum_env.helpers.Configuration):
 
     @property
     def plant_inflation_rate(self) -> float:
-        """The inflation rate to plant a tree."""
+        """The extra amount of planter to plant a tree after a certain number."""
         return self["plantInflationRate"]
+
+    @property
+    def player_tree_protective_number(self) -> float:
+        """The cost of planter to plant a tree is `plantCost` if not exceeding this number."""
+        return self["playerTreeProtectiveNumber"]
 
     @property
     def initial_collect_rate(self) -> float:
@@ -175,14 +180,14 @@ class Configuration(zerosum_env.helpers.Configuration):
         return self["treeLifespan"]
 
     @property
-    def initial_absorption_rate(self) -> float:
-        """The initial absorption rate of the tree"""
-        return self["initialAbsorptionRate"]
+    def cell_absorption_rate(self) -> float:
+        """The absorption rate of the tree from cell."""
+        return self["cellAbsorptionRate"]
 
     @property
-    def absorption_growth_rate(self) -> float:
-        """The max absorption rate of the tree (For cell: init_rate + life * growth_rate)"""
-        return self["absorptionGrowthRate"]
+    def collector_absorption_rate(self) -> float:
+        """The absorption rate of the tree from collector nearby"""
+        return self["collectorAbsorptionRate"]
 
     @property
     def start_pos_offset(self) -> float:
@@ -369,7 +374,7 @@ class Tree:
 
     def surround(self) -> List[Point]:
         """
-        待补充
+        Returns the directions of octet connected region.
         """
         return [
             Point(-1, 1),  # 左上
@@ -379,6 +384,17 @@ class Tree:
             Point(1, -1),  # 右下
             Point(0, -1),  # 下
             Point(-1, -1),  # 左下
+            Point(-1, 0)  # 左
+        ]
+
+    def quad_surround(self) -> List[Point]:
+        """
+        Returns the directions of quad connected region.
+        """
+        return [
+            Point(0, 1),  # 上
+            Point(1, 0),  # 右
+            Point(0, -1),  # 下
             Point(-1, 0)  # 左
         ]
 
@@ -931,7 +947,15 @@ class Board:
         plant_cost = configuration.plant_cost
         plant_inflation_rate = configuration.plant_inflation_rate
         alive_tree_count_in_market = sum([tree.age < configuration.tree_lifespan for tree in board.trees.values()])
-        current_plant_cost = plant_cost + alive_tree_count_in_market * plant_inflation_rate
+        plant_market_price = plant_cost + alive_tree_count_in_market * plant_inflation_rate  # 种树的市场价格
+
+        player_tree_count_threshold = configuration.player_tree_protective_number
+        player_plant_cost = {}
+        for player in board.players.values():
+            if len(player.trees) <= player_tree_count_threshold:  # 种树价格不受市场价格影响
+                player_plant_cost[player.id] = plant_cost
+            else:
+                player_plant_cost[player.id] = plant_market_price
 
         # 计算玩家指令(转化中心招募指令,种树员+捕碳员移动指令)、更新树龄
         disappeared_tree_flag = {}
@@ -1055,9 +1079,9 @@ class Board:
                     # 此处 无树 且无转化中心
                     delta_carbon = cell.carbon * player_collect_rate.get(worker.player_id, 0)  # 捕碳员的捕碳量
 
-                    if worker.is_planter and worker.player.cash >= current_plant_cost:
+                    if worker.is_planter and worker.player.cash >= player_plant_cost[worker.player_id]:
                         # 此处 当前停留方是种树人 且当前停留方金额超过种树金额 (种树逻辑)
-                        worker.player._cash = worker.player._cash - current_plant_cost
+                        worker.player._cash = worker.player._cash - player_plant_cost[worker.player_id]
                         new_tree = Tree(TreeId(new_tree_id(worker.player_id)),
                                         worker.position, 1, worker.player_id, board)
                         board._add_tree(new_tree)
@@ -1082,15 +1106,15 @@ class Board:
                         board._add_tree_dict(new_tree, worker.id, 0)
 
         # 树吸收CO2预处理
-        surround_tree_flag = {}  # key: 坐标, value: 0-表示树不可吸收, >0-表示树可以吸收
+        quad_surround_tree_flag = {}  # 树的四连通区域标识, key: 坐标, value: 0-表示树不可吸收, >0-表示树可以吸收
         for tree in board.trees.values():
             cell = tree.cell
-            for surround_tree in tree.surround():
+            for surround_tree in tree.quad_surround():  # 4连通区域
                 surround_tree_position = cell.position.translate(surround_tree, configuration.size)
 
                 # 将所有树周围的格子都标记
-                if surround_tree_position not in surround_tree_flag:
-                    surround_tree_flag[surround_tree_position] = 0
+                if surround_tree_position not in quad_surround_tree_flag:
+                    quad_surround_tree_flag[surround_tree_position] = 0
 
                 # 判断树周围是否有人
                 surround_tree_cell = board.cells[surround_tree_position]
@@ -1100,43 +1124,41 @@ class Board:
                                  or (surround_tree_cell.worker.occupation == Occupation.COLLECTOR
                                      and surround_tree_cell.worker.next_action is not None))):
                     # 周围不存在树 且 (周围不存在人 或 周围存在种树员 或 周围存在捕碳员但不是停留 )
-                    surround_tree_flag[surround_tree_position] = surround_tree_flag[surround_tree_position] + 1
+                    quad_surround_tree_flag[surround_tree_position] = quad_surround_tree_flag[surround_tree_position] + 1
 
         # Collect carbon from cells into trees
-        tree_absorption_t0 = configuration.initial_absorption_rate
-        tree_absorption_growth = configuration.absorption_growth_rate
+        cell_absorption_rate = configuration.cell_absorption_rate  # 树对格子的吸收率(4连通)
+        collector_absorption_rate = configuration.collector_absorption_rate  # 树对捕碳员的吸收率(8连通)
         board_carbon_reduction = defaultdict(float)  # 树吸收周边CO2的数量 (仅格子CO2), key: pos, value: co2
         worker_carbon_reduction = defaultdict(float)  # 树吸收周边对手捕碳员携带CO2的数量, key: worker_id, value: co2
         for tree in board.trees.values():
             if tree.id in new_born_tree_ids:  # 本轮种植的树, 不参与计算
                 continue
 
-            tree_absorption_rate = tree_absorption_t0 + (tree.age - 1) * tree_absorption_growth  # last turn age !!!
-
             tree_carbon = 0  # 树吸收CO2总量
             worker_under_tree = board.cells[tree.position].worker
             if worker_under_tree is not None and \
                     worker_under_tree.is_collector and \
                     worker_under_tree.player_id != tree.player_id:  # 树下有对方的捕碳员, 记录树的吸收量
-                absorbed_co2 = worker_under_tree.carbon * tree_absorption_rate
+                absorbed_co2 = worker_under_tree.carbon * collector_absorption_rate
                 tree_carbon += absorbed_co2  # 记入树
                 worker_carbon_reduction[worker_under_tree.id] += absorbed_co2  # 记入捕碳员
 
-            for surround_tree in tree.surround():  # 八邻域
+            for surround_tree in tree.surround():  # 8连通区域
                 surround_tree_position = tree.cell.position.translate(surround_tree, configuration.size)
                 surround_tree_cell = board.cells[surround_tree_position]
 
                 if surround_tree_cell.worker is not None and \
                         surround_tree_cell.worker.is_collector and \
                         surround_tree_cell.worker.player_id != tree.player_id:  # 树的周边有对方的捕碳员, 记录树的吸收量
-                    absorbed_co2 = surround_tree_cell.worker.carbon * tree_absorption_rate
+                    absorbed_co2 = surround_tree_cell.worker.carbon * collector_absorption_rate
                     tree_carbon += absorbed_co2  # 记入树
                     worker_carbon_reduction[surround_tree_cell.worker_id] += absorbed_co2  # 记入捕碳员
 
                 if surround_tree_cell.carbon > 0 and \
-                        surround_tree_position in surround_tree_flag and \
-                        surround_tree_flag[surround_tree_position] > 0:  # 树吸收周边CO2
-                    absorbed_co2 = surround_tree_cell.carbon * tree_absorption_rate
+                        surround_tree_position in quad_surround_tree_flag and \
+                        quad_surround_tree_flag[surround_tree_position] > 0:  # 树吸收周边CO2
+                    absorbed_co2 = surround_tree_cell.carbon * cell_absorption_rate
                     tree_carbon += absorbed_co2  # 记入树
                     board_carbon_reduction[surround_tree_position] += absorbed_co2  # 记入格子
 
@@ -1144,7 +1166,7 @@ class Board:
             board._add_tree_dict(tree, board._trees_dict[tree.id][0], tree_carbon)
 
         # 树周围（网格） co2被净化
-        for surround_tree_position, absorption_flag in surround_tree_flag.items():
+        for surround_tree_position, absorption_flag in quad_surround_tree_flag.items():
             surround_tree_cell = board.cells[surround_tree_position]
             # 周围单元格的co2大于0，并且，单元格的碳可以被吸收
             if surround_tree_cell.carbon > 0 and absorption_flag > 0:
@@ -1163,7 +1185,7 @@ class Board:
                     cell.position not in collisions_flag and \
                     cell.tree_id is None and \
                     cell.position not in disappeared_tree_flag and \
-                    cell.position not in surround_tree_flag:
+                    cell.position not in quad_surround_tree_flag:
                 # 此处（当前格子中无人 或者 当前格子中有人但不是停留动作）且未发生碰撞 且无树 且树非此轮消失 且非树周围
                 next_carbon = cell.carbon * (1 + configuration.regen_rate)
                 # TODO: 是否需要随机生成新的碳点 ???
