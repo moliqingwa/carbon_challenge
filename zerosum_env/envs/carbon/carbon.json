@@ -11,7 +11,7 @@
     "startingCarbon": {
       "description": "The starting amount of carbon available on the board.",
       "type": "integer",
-      "default": 1200
+      "default": 2500
     },
     "size": {
       "description": "The number of cells vertically and horizontally on the board.",
