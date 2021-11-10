@@ -94,10 +94,16 @@
       "default": 20,
       "minimum": 0
     },
-    "plantInflationRate": {
-      "description": "The extra amount of planter to plant a tree after a certain number. Real cost is (plantCost + n * plantInflationRate).",
+    "plantCostInflationRatio": {
+      "description": "The ratio of market amount of planter to plant a tree after a certain number. Real cost is (plantCost + plantCostInflationRatio * plantCostInflationBase ** n).",
       "type": "number",
       "default": 5,
+      "minimum": 0
+    },
+    "plantCostInflationBase": {
+      "description": "The base of market amount of planter to plant a tree after a certain number. Real cost is (plantCost + plantCostInflationRatio * plantCostInflationBase ** n).",
+      "type": "number",
+      "default": 1.235,
       "minimum": 0
     },
     "playerTreeProtectiveNumber": {

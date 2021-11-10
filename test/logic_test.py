@@ -982,7 +982,7 @@ class LogicTest(unittest.TestCase):
     def test_more_trees_share_cash(self):
         size = 5
         plant_cost = 10
-        env = make("carbon", configuration={"size": size, "plantCost": plant_cost, "plantInflationRate": 0})
+        env = make("carbon", configuration={"size": size, "plantCost": plant_cost, "plantCostInflationRatio": 0})
         board = Board(env.reset(2)[0].observation, env.configuration)
         me = board.current_player
         for recrtCenter in me.recrtCenters:
@@ -1138,7 +1138,7 @@ class LogicTest(unittest.TestCase):
         env = make("carbon", configuration={"size": size, "recPlanterCost": rec_cost, "recCollectorCost": rec_cost,
                                             "workerLimit": 5,
                                             "cellAbsorptionRate": 0, "collectorAbsorptionRate": 0,
-                                            "plantCost": plant_cost, "plantInflationRate": plant_inflation_rate})
+                                            "plantCost": plant_cost, "plantCostInflationRatio": plant_inflation_rate})
         board = Board(env.reset(2)[0].observation, env.configuration)
         cash = board.current_player.cash
         me = board.current_player
