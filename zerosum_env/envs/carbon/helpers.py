@@ -95,9 +95,14 @@ class Configuration(zerosum_env.helpers.Configuration):
         return self["plantCost"]
 
     @property
-    def plant_inflation_rate(self) -> float:
-        """The extra amount of planter to plant a tree after a certain number."""
-        return self["plantInflationRate"]
+    def plant_cost_inflation_ratio(self) -> float:
+        """The ratio of market amount of planter to plant a tree after a certain number."""
+        return self["plantCostInflationRatio"]
+
+    @property
+    def plant_cost_inflation_base(self) -> float:
+        """The base of market amount of planter to plant a tree after a certain number."""
+        return self["plantCostInflationBase"]
 
     @property
     def player_tree_protective_number(self) -> float:
@@ -945,9 +950,10 @@ class Board:
 
         # 计算当前轮树的种植价格
         plant_cost = configuration.plant_cost
-        plant_inflation_rate = configuration.plant_inflation_rate
-        alive_tree_count_in_market = sum([tree.age < configuration.tree_lifespan for tree in board.trees.values()])
-        plant_market_price = plant_cost + alive_tree_count_in_market * plant_inflation_rate  # 种树的市场价格
+        plant_cost_ratio = configuration.plant_cost_inflation_ratio
+        plant_cost_base = configuration.plant_cost_inflation_base
+        alive_tree_count = sum([tree.age < configuration.tree_lifespan for tree in board.trees.values()])
+        plant_market_price = plant_cost + plant_cost_ratio * (plant_cost_base ** alive_tree_count)  # 种树的市场价格
 
         player_tree_count_threshold = configuration.player_tree_protective_number
         player_plant_cost = {}
