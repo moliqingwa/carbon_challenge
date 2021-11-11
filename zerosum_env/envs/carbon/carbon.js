@@ -651,8 +651,9 @@ if(!img){
    * @param {*} color the color of histogram (blue/orange)
    * @param {*} coef the coefficient of log function
    * @param {*} trans the transparency of border (0 to 1)
+   * @param {*} isTimeOut is timeout or not
    */
-   const drawHistogram = (ctx, x, y, w, h, status, color, coef, trans) => {
+   const drawHistogram = (ctx, x, y, w, h, status, color, coef, trans, isTimeOut) => {
     // storage of money
     let money = h.toFixed(2)
     // padding top
@@ -681,7 +682,7 @@ if(!img){
     let moyLen = money.toString().length > 2 ? money.toString().length - 2 : 0
     ctx.font = w * 0.4 - moyLen * 1.5 + "px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(money + "万", x + w / 2, y - h - w * 0.6 + moyLen * 1.5)
+    ctx.fillText(isTimeOut == true ? "timeout" : money + "万", x + w / 2, y - h - w * 0.6 + moyLen * 1.5)
 
     // histogram
     ctx.beginPath();
@@ -906,13 +907,16 @@ if(!img){
       // }
     // });
 
-    let lftFn = state[0].reward; // left histogram fortune
-    let rgtFn = state[1].reward; // right histogram fortune 
-
+    let lftIsTmOut = state[0].reward == null ? true : false;
+    let rgtIsTmOut = state[1].reward == null ? true : false;
+    let lftFn = lftIsTmOut == true ? 0 : state[0].reward; // left histogram fortune
+    let rgtFn = rgtIsTmOut == true ? 0 : state[1].reward; // right histogram fortune 
+    console.log("lftFn", lftFn)
+    console.log("rgtFn", rgtFn)
     // draw right histogram
-    rgtFn >= lftFn ? drawHistogram(fgCtx, hmxr, hmy, hmw, rgtFn, "smile", rightColor, coefhm, trans) : drawHistogram(fgCtx, hmxr, hmy, hmw, rgtFn, "sad", rightColor, coefhm, trans)
+    rgtFn >= lftFn ? drawHistogram(fgCtx, hmxr, hmy, hmw, rgtFn, "smile", rightColor, coefhm, trans, rgtIsTmOut) : drawHistogram(fgCtx, hmxr, hmy, hmw, rgtFn, "sad", rightColor, coefhm, trans, rgtIsTmOut)
     // draw left histogram
-    lftFn >= rgtFn ? drawHistogram(fgCtx, hmxl, hmy, hmw, lftFn, "smile", leftColor, coefhm, trans) : drawHistogram(fgCtx, hmxl, hmy, hmw, lftFn, "sad", leftColor, coefhm, trans)
+    lftFn >= rgtFn ? drawHistogram(fgCtx, hmxl, hmy, hmw, lftFn, "smile", leftColor, coefhm, trans, lftIsTmOut) : drawHistogram(fgCtx, hmxl, hmy, hmw, lftFn, "sad", leftColor, coefhm, trans, lftIsTmOut)
 
     drawPlayerInfo();
   }
