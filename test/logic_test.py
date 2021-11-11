@@ -22,6 +22,7 @@ class LogicTest(unittest.TestCase):
         # We compare to a floating point value here to handle float rounding errors
         self.assertLess(next_cell.carbon - cell.carbon - expected_regen, .000001)
 
+
     # Test case @1.3
     def test_recrtCenter_reccollector_fail(self):
         def recrtCenter_reccollector_agent(observation, configuration):
@@ -59,6 +60,7 @@ class LogicTest(unittest.TestCase):
         self.assertEqual(len(env.steps[1][0]["observation"]["players"][0][2]), 1)
         print("2 ok")
 
+
     # Test case @1.10
     def test_collector_stay_opponent_recrtCenter(self):
         board = create_board(starting_carbon=1000, size=5, random_seed=1, regenRate=0.05, agent_count=2)
@@ -78,6 +80,7 @@ class LogicTest(unittest.TestCase):
         print(board)
         print(next_board)
 
+
     # Test case @1.31
     def test_termination(self):
         board_size = 21
@@ -96,6 +99,45 @@ class LogicTest(unittest.TestCase):
 
         env.run([convert_agent, "random"])
         self.assertEqual(len(env.steps), 3)
+
+
+
+    def test_planter_plant_trees(self):
+        size = 7
+        rec_cost = 5
+        plant_cost = 5
+        plant_inflation_rate = 5
+        env = make("carbon", configuration={"size": size, "recPlanterCost": rec_cost, "recCollectorCost": rec_cost,
+                                            "workerLimit": 5,
+                                            "cellAbsorptionRate": 0, "collectorAbsorptionRate": 0,
+                                            "plantCost": plant_cost, "plantCostInflationRatio": plant_inflation_rate})
+        board = Board(env.reset(2)[0].observation, env.configuration)
+        cash = board.current_player.cash
+        me = board.current_player
+        for recrtCenter in me.recrtCenters:
+            recrtCenter.next_action = RecrtCenterAction.RECPLANTER
+        board = board.next()
+        cash -= rec_cost
+        self.assertEqual(board.current_player.cash, cash)
+
+        first(board.current_player.planters).next_action = WorkerAction.UP
+        board = board.next()
+        board = board.next()  # 种树
+        board = board.next()
+        cash -= plant_cost
+        self.assertEqual(board.current_player.cash, cash)
+
+        first(board.current_player.planters).next_action = WorkerAction.UP
+        board = board.next()
+        board = board.next()  # 种树
+        cash -= (plant_cost + plant_inflation_rate)
+        self.assertEqual(board.current_player.cash, cash)
+        for _ in range(50):  # 50轮后重新种树
+            board = board.next()
+        cash -= plant_cost
+        self.assertEqual(board.current_player.cash, cash)
+
+        first(me.planters).next_action = WorkerAction.UP
 
 
 if __name__ == '__main__':

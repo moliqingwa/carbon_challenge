@@ -11,7 +11,7 @@
     "startingCarbon": {
       "description": "The starting amount of carbon available on the board.",
       "type": "integer",
-      "default": 1200
+      "default": 2500
     },
     "size": {
       "description": "The number of cells vertically and horizontally on the board.",
@@ -20,9 +20,9 @@
       "minimum": 2
     },
     "startPosOffset": {
-      "description": "The offset of starting position",
+      "description": "The offset of starting position (closer to center for bigger value)",
       "type": "integer",
-      "default": 2
+      "default": 1
     },
     "startingCellCarbon": {
       "description": "The starting maximum mount of carbon in cell.",
@@ -42,10 +42,22 @@
       "default": 30,
       "minimum": 0
     },
+    "recCollectorIncreaseCost": {
+      "description": "The increase amount of recruitment center to recruit a new collector.",
+      "type": "integer",
+      "default": 0,
+      "minimum": 0
+    },
     "recPlanterCost": {
       "description": "The amount of recruitment center to recruit a new planter.",
       "type": "integer",
       "default": 30,
+      "minimum": 0
+    },
+    "recPlanterIncreaseCost": {
+      "description": "The increase amount of recruitment center to recruit a new planter.",
+      "type": "integer",
+      "default": 0,
       "minimum": 0
     },
     "moveCost": {
@@ -77,15 +89,33 @@
       "minimum": 0
     },
     "plantCost": {
-      "description": "The amount of planter to plant a tree.",
+      "description": "The initial amount of planter to plant a tree.",
       "type": "integer",
       "default": 20,
       "minimum": 0
     },
+    "plantCostInflationRatio": {
+      "description": "The ratio of market amount of planter to plant a tree after a certain number. Real cost is (plantCost + plantCostInflationRatio * plantCostInflationBase ** n).",
+      "type": "number",
+      "default": 5,
+      "minimum": 0
+    },
+    "plantCostInflationBase": {
+      "description": "The base of market amount of planter to plant a tree after a certain number. Real cost is (plantCost + plantCostInflationRatio * plantCostInflationBase ** n).",
+      "type": "number",
+      "default": 1.235,
+      "minimum": 0
+    },
+    "playerTreeProtectiveNumber": {
+      "description": "The cost of planter to plant a tree is `plantCost` if not exceeding this number.",
+      "type": "integer",
+      "default": 0,
+      "minimum": -1
+    },
     "co2FrmWithered": {
       "description": "The amount of carbon from withered tree.",
       "type": "integer",
-      "default": 5,
+      "default": 30,
       "minimum": 0
     },
     "seizeCost": {
@@ -94,16 +124,22 @@
       "default": 20,
       "minimum": 0
     },
-    "collectRate": {
-      "description": "The rate of collector collected from a cell by not moving.",
+    "initialCollectRate": {
+      "description": "The initial rate of collector collected from a cell by not moving.",
       "type": "number",
-      "default": 0.25,
+      "default": 0.3,
+      "minimum": 0
+    },
+    "collectDecreaseRate": {
+      "description": "The decrease rate for collector to collect CO2 according to one player's collectors count.",
+      "type": "number",
+      "default": 0.0,
       "minimum": 0
     },
     "regenRate": {
       "description": "The rate carbon regenerates on the board.",
       "type": "number",
-      "default": 0.02,
+      "default": 0.05,
       "minimum": 0
     },
     "treeLifespan": {
@@ -111,10 +147,15 @@
       "type": "integer",
       "default": 50
     },
-    "absorptionRate": {
-      "description": "The absorption rate of the tree",
+    "cellAbsorptionRate": {
+      "description": "The absorption rate of the tree from cell",
       "type": "number",
-      "default": 0.02
+      "default": 0.0375
+    },
+    "collectorAbsorptionRate": {
+      "description": "The absorption rate of the tree from collector nearby",
+      "type": "number",
+      "default": 0.1
     },
     "randomSeed": {
       "description": "The seed used to initialize the random number generator.",
@@ -133,7 +174,7 @@
   "reward": {
     "description": "The amount of player owned money (equal to players[index][0]) if the player has not been eliminated, else step_eliminated - episode_steps - 1.",
     "type": "integer",
-    "default": 50
+    "default": 80
   },
   "observation": {
     "carbon": {
