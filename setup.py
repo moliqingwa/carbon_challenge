@@ -46,5 +46,5 @@ setup(
     install_requires=["jsonschema >= 3.0.1"],
     packages=find_packages(),
     include_package_data=True,
-    python_requires='>=3.6',
+    python_requires='>=3.9',
     license='Apache 2.0')

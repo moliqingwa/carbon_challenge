@@ -1,8 +1,5 @@
 @echo off 
-set MODULES=flask gym ipython jsonschema numpy requests wheel
-(for %%m in (%MODULES%) do ( 
-    pip install %%m
-))
+pip install -r requirements.txt -i https://mirror.baidu.com/pypi/simple
 
 del /s /q .\dist\*.*
 rd  /s /q .\dist

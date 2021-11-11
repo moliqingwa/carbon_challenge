@@ -24,8 +24,6 @@ from numpy.random import RandomState, SeedSequence
 from .helpers import board_agent, Board, WorkerAction, RecrtCenterAction, Occupation
 from .idgen import new_worker_id, new_recrtCenter_id, new_tree_id, reset as reset_ids
 from zerosum_env import utils
-from .muagent import mu_agent
-from .rain_carbon import *
 
 
 def get_col_row(size, pos):
@@ -83,109 +81,7 @@ def random_agent(board):
             recrtCenter.next_action = RecrtCenterAction.RECPLANTER
 
 
-@board_agent
-def my_agent(board):
-    me = board.current_player
-
-    # 给自身所有飞船下达往上移动的指令
-    for worker in me.workers:
-        worker.next_action = WorkerAction.UP
-
-    # 给自身所有飞船下达往下移动的指令
-    for worker in me.workers:
-        worker.next_action = WorkerAction.DOWN
-
-    # 给自身所有飞船下达往左移动的指令
-    for worker in me.workers:
-        worker.next_action = WorkerAction.LEFT
-
-    # 给自身所有飞船下达往右移动的指令
-    for worker in me.workers:
-        worker.next_action = WorkerAction.RIGHT
-
-    # 给自身所有基地下达招募捕碳员的指令
-    for recrtCenter in me.recrtCenters:
-        recrtCenter.next_action = RecrtCenterAction.RECCOLLECTOR
-
-    # 给自身所有基地下达招募种树员的指令
-    for recrtCenter in me.recrtCenters:
-        recrtCenter.next_action = RecrtCenterAction.RECPLANTER
-
-
-@board_agent
-def other_agent(board):
-    me = board.current_player
-
-    if randint(0, 3) == 1:
-        for recrtCenter in me.recrtCenters:
-            if me.cash >= 30:
-                if randint(0, 2) == 1:
-                    recrtCenter.next_action = RecrtCenterAction.RECCOLLECTOR
-                else:
-                    recrtCenter.next_action = RecrtCenterAction.RECPLANTER
-
-    else:
-        for worker in me.workers:
-            worker.next_action = choice(WorkerAction.moves())
-
-
-@board_agent
-def terminal_agent(board):
-    print("current step: ", board.step, ";")
-    print("KeyInput: U-UP, D-DOWN, L-LEFT, R-RIGHT, P-RECPLANTER, C-RECCOLLECTOR, other-None")
-
-    size = board.configuration.size
-    result = ''
-    for y in range(size):
-        for x in range(size):
-            cell = board.cells[(x, size - y - 1)]
-            result += '| '
-            result += str(cell.carbon)
-            result += (
-                str(cell.worker.occupation)[0] + str(cell.worker.player_id)
-                if cell.worker is not None
-                else ''
-            )
-            result += (
-                'R' + str(cell.recrtCenter.player_id)
-                if cell.recrtCenter is not None
-                else ''
-            )
-            result += (
-                'T' + str(cell.tree.player_id)
-                if cell.tree is not None
-                else ''
-            )
-
-        result += ' |\n'
-
-    print(result)
-
-    move_switch = {
-        'U': WorkerAction.UP,
-        'D': WorkerAction.DOWN,
-        'L': WorkerAction.LEFT,
-        'R': WorkerAction.RIGHT
-    }
-    rec_switch = {
-        'P': RecrtCenterAction.RECPLANTER,
-        'C': RecrtCenterAction.RECCOLLECTOR,
-    }
-    me = board.current_player
-    for recrtCenter in me.recrtCenters:
-        print(recrtCenter.id + " action: ")
-        args = input()
-        recrtCenter.next_action = rec_switch.get(args.upper())
-
-    for worker in me.workers:
-        print(str(worker.occupation) + "-" + worker.id + " action: ")
-        args = input()
-        worker.next_action = move_switch.get(args.upper())
-
-
-agents = {"random": random_agent, "my_agent": my_agent,
-          "other_agent": other_agent, "my_agent1": Tankagent1, "terminal_agent": terminal_agent,
-          "yuhm_agent": Tankagent1, "mu_agent": mu_agent}
+agents = {"random": random_agent}
 
 
 def populate_board(state, env):
