@@ -6,7 +6,7 @@
 
 [flask, gym, ipython, jsonschema, numpy, requests, wheel]
 
-``例: pip install flask``
+``pip install -r requirements.txt``
 ## 运行方式:
 若本地pyhon默认2.7, 可用python3运行
 ### 本地运行命令：
