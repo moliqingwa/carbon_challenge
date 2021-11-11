@@ -1,13 +1,5 @@
 #!/bin/bash
-MODULES="flask gym ipython jsonschema numpy requests wheel"
-
-for i in $MODULES; do
-    res=`pip freeze | grep -i ${i}`
-    if [[ "$res" == "" ]]
-    then
-        pip install $i
-    fi
-done
+pip install -r requirements.txt -i https://mirror.baidu.com/pypi/simple
 
 rm -rf ./dist
 rm -rf ./build
@@ -33,4 +25,3 @@ else
         echo "Please Install The Correct Python Verison.(3.9)"
     fi
 fi
-read -n 1
