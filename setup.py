@@ -31,7 +31,7 @@ def get_version(rel_path):
     else:
         raise RuntimeError("Unable to find version string.")
 
-with codecs.open("README.md", "r") as f:
+with codecs.open("README.md", "r", encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
