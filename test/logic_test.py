@@ -100,8 +100,6 @@ class LogicTest(unittest.TestCase):
         env.run([convert_agent, "random"])
         self.assertEqual(len(env.steps), 3)
 
-
-
     def test_planter_plant_trees(self):
         size = 7
         rec_cost = 5
@@ -138,6 +136,70 @@ class LogicTest(unittest.TestCase):
         self.assertEqual(board.current_player.cash, cash)
 
         first(me.planters).next_action = WorkerAction.UP
+
+    def test_collector_occupy_opponnent_base(self):
+        size = 7
+        rec_cost = 5
+        plant_cost = 5
+        plant_inflation_rate = 5
+        env = make("carbon", configuration={"size": size, "recPlanterCost": rec_cost, "recCollectorCost": rec_cost,
+                                            "workerLimit": 5,
+                                            "cellAbsorptionRate": 0, "collectorAbsorptionRate": 0,
+                                            "plantCost": plant_cost, "plantCostInflationRatio": plant_inflation_rate})
+        board = Board(env.reset(2)[0].observation, env.configuration)
+
+        # 招募捕碳员1
+        me = board.current_player
+        for recrtCenter in me.recrtCenters:
+            recrtCenter.next_action = RecrtCenterAction.RECCOLLECTOR
+        board = board.next()
+
+        # 招募捕碳员2，捕碳员1右移
+        for recrtCenter in board.current_player.recrtCenters:
+            recrtCenter.next_action = RecrtCenterAction.RECCOLLECTOR
+        for worker in board.current_player.workers:
+            worker.next_action = WorkerAction.RIGHT
+        board = board.next()
+
+        # 捕碳员2右移，捕碳员1右移
+        for worker in board.current_player.workers:
+            worker.next_action = WorkerAction.RIGHT
+        board = board.next()
+
+        # 捕碳员2右移，捕碳员1下移
+        for i, worker in enumerate(board.current_player.workers):
+            worker.next_action = WorkerAction.DOWN if i == 0 else WorkerAction.RIGHT
+        board = board.next()
+
+        # 捕碳员2下移，捕碳员1下移
+        for i, worker in enumerate(board.current_player.workers):
+            worker.next_action = WorkerAction.DOWN
+        board = board.next()
+
+        self.assertEqual(len(board.workers), 1)  # 捕碳员1消失
+
+        next(iter(board.workers.values()))._carbon = 10
+        # 捕碳员2下移
+        for i, worker in enumerate(board.current_player.workers):
+            worker.next_action = WorkerAction.DOWN
+        board = board.next()
+
+        self.assertEqual(len(board.workers), 1)  # 捕碳员2未消失
+        self.assertEqual(next(iter(board.workers.values())).carbon, 0)
+
+        # 捕碳员2下移
+        for i, worker in enumerate(board.current_player.workers):
+            worker.next_action = WorkerAction.DOWN
+        board = board.next()
+
+        self.assertEqual(len(board.workers), 1)  # 捕碳员2未消失
+
+        # 捕碳员2上移
+        for i, worker in enumerate(board.current_player.workers):
+            worker.next_action = WorkerAction.UP
+        board = board.next()
+
+        self.assertEqual(len(board.workers), 0)  # 捕碳员2消失
 
 
 if __name__ == '__main__':
