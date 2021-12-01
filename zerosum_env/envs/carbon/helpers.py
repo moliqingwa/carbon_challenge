@@ -1066,11 +1066,15 @@ class Board:
         # 捕碳员运输CO2到转化中心
         for recrtCenter in list(board.recrtCenters.values()):
             worker = recrtCenter.cell.worker
-            if worker is not None and worker.player_id == recrtCenter.player_id:
-                # 捕碳员 回到转化中心
-                if worker.is_collector and worker._carbon >= configuration.smelt_cost:
-                    recrtCenter.player._cash += worker._carbon - configuration.smelt_cost
-                    worker._carbon = 0
+            if worker is not None:
+                if worker.is_collector:  # 捕碳员 回到转化中心
+                    if worker.player_id != recrtCenter.player_id and \
+                            worker._carbon <= configuration.smelt_cost:  # 对方人员无碳,则直接消失
+                        # 从地图中删除工人
+                        board._delete_worker(worker)
+                    elif worker._carbon >= configuration.smelt_cost:  # 净化CO2
+                        recrtCenter.player._cash += worker._carbon - configuration.smelt_cost
+                        worker._carbon = 0
 
         # 计算工人的停留指令(种树员种树/抢树,捕碳员捕碳)
         new_born_tree_ids = set()  # 本轮新种的树
