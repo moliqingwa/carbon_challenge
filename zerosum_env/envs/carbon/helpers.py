@@ -1041,7 +1041,8 @@ class Board:
         worker_collision_groups = group_by(board.workers.values(), lambda worker: worker.position)
         for position, collided_workers in worker_collision_groups.items():
             winner, deleted = resolve_collision(collided_workers)
-            collisions_flag[position] = len(deleted) > 0  # 若发生碰撞,标记为True;反之,为False
+            if len(deleted) > 0:  # 若发生碰撞,标记为True
+                collisions_flag[position] = True
 
             is_winner_collector = False
             if winner is not None:
