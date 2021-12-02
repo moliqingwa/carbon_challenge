@@ -199,6 +199,11 @@ class Configuration(zerosum_env.helpers.Configuration):
         """The offset of starting position"""
         return self["startPosOffset"]
 
+    @property
+    def number_of_bases(self) -> int:
+        """The number of bases for each player"""
+        return self["numberOfBases"]
+
 
 class WorkerAction(Enum):
     UP = auto()

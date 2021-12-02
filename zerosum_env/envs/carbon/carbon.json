@@ -19,6 +19,13 @@
       "default": 15,
       "minimum": 2
     },
+    "numberOfBases": {
+      "description": "The number of bases for each player.",
+      "type": "integer",
+      "default": 2,
+      "minimum": 1,
+      "maximum": 2
+    },
     "startPosOffset": {
       "description": "The offset of starting position (closer to center for bigger value)",
       "type": "integer",

@@ -155,20 +155,25 @@ def populate_board(state, env):
 
     # Distribute the starting workers evenly.
     num_agents = len(state)
-    starting_positions = [0] * num_agents
+    num_bases = config.numberOfBases
+    starting_positions = [0] * num_agents * num_bases
     starting_positions[0] = size * (size // 4 + config.startPosOffset) + size // 4 + config.startPosOffset
     starting_positions[1] = size * (3 * size // 4 - config.startPosOffset) + 3 * size // 4 - config.startPosOffset
-    obs.carbon[starting_positions[0]] = 0
-    obs.carbon[starting_positions[1]] = 0
+    starting_positions[2] = size * (size // 4 + config.startPosOffset) + 3 * size // 4 - config.startPosOffset
+    starting_positions[3] = size * (3 * size // 4 - config.startPosOffset) + size // 4 + config.startPosOffset
+
+    for position in starting_positions:
+        obs.carbon[position] = 0
 
     # Initialize the players.
     reset_ids()
     obs.players = []
     for i in range(num_agents):
         # workers = {new_worker_id(i): [starting_positions[i], 0, '']}
-        recrtCenter = {new_recrtCenter_id(i): starting_positions[i]}
+        base_start_index = i * num_bases
+        base_dict = {new_recrtCenter_id(i): starting_positions[base_start_index+j] for j in range(num_bases)}
         # tree = {new_tree_id(i): starting_positions[i]+3}
-        obs.players.append([state[0].reward, recrtCenter, {}, {}])
+        obs.players.append([state[0].reward, base_dict, {}, {}])
 
     obs.trees = {}
 

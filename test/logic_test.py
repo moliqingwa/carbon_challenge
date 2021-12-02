@@ -201,6 +201,26 @@ class LogicTest(unittest.TestCase):
 
         self.assertEqual(len(board.workers), 0)  # 捕碳员2消失
 
+    def test_two_bases_recruit(self):
+        size = 7
+        rec_cost = 5
+        plant_cost = 5
+        plant_inflation_rate = 5
+        env = make("carbon", configuration={"size": size, "recPlanterCost": rec_cost, "recCollectorCost": rec_cost,
+                                            "workerLimit": 5,
+                                            "numberOfBases": 2,
+                                            "cellAbsorptionRate": 0, "collectorAbsorptionRate": 0,
+                                            "plantCost": plant_cost, "plantCostInflationRatio": plant_inflation_rate})
+        board = Board(env.reset(2)[0].observation, env.configuration)
+
+        base_positions = set()
+        for base in board.recrtCenters.values():
+            base.next_action = RecrtCenterAction.RECCOLLECTOR
+            base_positions.add(base.position)
+        board = board.next()
+        self.assertEqual(len(board.workers), 4)
+        self.assertEqual({worker.position for worker in board.workers.values()}, base_positions)
+
 
 if __name__ == '__main__':
     unittest.main()
