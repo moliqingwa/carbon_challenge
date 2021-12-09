@@ -184,10 +184,18 @@
     "default": 80
   },
   "observation": {
-    "carbon": {
+    "full_carbon": {
       "description": "Serialized list of available carbon per cell on the board.",
       "type": "array",
-      "shared": true,
+      "hidden": true,
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "carbon": {
+      "description": "Serialized list of available carbon per cell on the board for each player.",
+      "type": "array",
       "items": {
         "type": "integer",
         "minimum": 0

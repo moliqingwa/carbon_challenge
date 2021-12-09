@@ -25,6 +25,25 @@ from .idgen import new_worker_id, new_tree_id
 from .termtables import to_string
 
 
+ConnectedField4 = [  # 4-连通
+    Point(0, 1),  # 上
+    Point(1, 0),  # 右
+    Point(0, -1),  # 下
+    Point(-1, 0)  # 左
+]
+
+ConnectedField8 = [  # 8-连通
+    Point(-1, 1),  # 左上
+    Point(0, 1),  # 上
+    Point(1, 1),  # 右上
+    Point(1, 0),  # 右
+    Point(1, -1),  # 右下
+    Point(0, -1),  # 下
+    Point(-1, -1),  # 左下
+    Point(-1, 0)  # 左
+]
+
+
 # region Data Model Classes
 class Observation(zerosum_env.helpers.Observation):
     """
@@ -386,27 +405,15 @@ class Tree:
         """
         Returns the directions of octet connected region.
         """
-        return [
-            Point(-1, 1),  # 左上
-            Point(0, 1),  # 上
-            Point(1, 1),  # 右上
-            Point(1, 0),  # 右
-            Point(1, -1),  # 右下
-            Point(0, -1),  # 下
-            Point(-1, -1),  # 左下
-            Point(-1, 0)  # 左
-        ]
+        global ConnectedField8
+        return ConnectedField8
 
     def quad_surround(self) -> List[Point]:
         """
         Returns the directions of quad connected region.
         """
-        return [
-            Point(0, 1),  # 上
-            Point(1, 0),  # 右
-            Point(0, -1),  # 下
-            Point(-1, 0)  # 左
-        ]
+        global ConnectedField4
+        return ConnectedField4
 
     @property
     def _observation(self) -> List[int]:
