@@ -19,6 +19,13 @@
       "default": 15,
       "minimum": 2
     },
+    "carbonCoverage": {
+      "description": "The rate of cells coverage of carbon on the board.",
+      "type": "integer",
+      "default": 60,
+      "minimum": 1,
+      "maximum": 100
+    },
     "numberOfBases": {
       "description": "The number of bases for each player.",
       "type": "integer",

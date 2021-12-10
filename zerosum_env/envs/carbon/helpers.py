@@ -219,6 +219,11 @@ class Configuration(zerosum_env.helpers.Configuration):
         return self["startPosOffset"]
 
     @property
+    def carbon_coverage(self) -> int:
+        """The rate of cells coverage of carbon on the board."""
+        return self["carbonCoverage"]
+
+    @property
     def number_of_bases(self) -> int:
         """The number of bases for each player"""
         return self["numberOfBases"]
