@@ -22,7 +22,7 @@
     "carbonCoverage": {
       "description": "The rate of cells coverage of carbon on the board.",
       "type": "integer",
-      "default": 60,
+      "default": 45,
       "minimum": 1,
       "maximum": 100
     },
