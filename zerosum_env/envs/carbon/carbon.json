@@ -153,7 +153,7 @@
     "regenRate": {
       "description": "The rate carbon regenerates on the board.",
       "type": "number",
-      "default": 0.05,
+      "default": 0.03,
       "minimum": 0
     },
     "treeLifespan": {
