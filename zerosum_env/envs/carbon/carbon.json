@@ -19,6 +19,20 @@
       "default": 15,
       "minimum": 2
     },
+    "carbonCoverage": {
+      "description": "The rate of cells coverage of carbon on the board.",
+      "type": "integer",
+      "default": 45,
+      "minimum": 1,
+      "maximum": 100
+    },
+    "numberOfBases": {
+      "description": "The number of bases for each player.",
+      "type": "integer",
+      "default": 2,
+      "minimum": 1,
+      "maximum": 2
+    },
     "startPosOffset": {
       "description": "The offset of starting position (closer to center for bigger value)",
       "type": "integer",
@@ -139,7 +153,7 @@
     "regenRate": {
       "description": "The rate carbon regenerates on the board.",
       "type": "number",
-      "default": 0.05,
+      "default": 0.03,
       "minimum": 0
     },
     "treeLifespan": {
@@ -177,10 +191,18 @@
     "default": 80
   },
   "observation": {
-    "carbon": {
+    "full_carbon": {
       "description": "Serialized list of available carbon per cell on the board.",
       "type": "array",
-      "shared": true,
+      "hidden": true,
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "carbon": {
+      "description": "Serialized list of available carbon per cell on the board for each player.",
+      "type": "array",
       "items": {
         "type": "integer",
         "minimum": 0

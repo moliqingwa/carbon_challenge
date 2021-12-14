@@ -21,7 +21,7 @@ from random import choice, randint, randrange, sample, seed
 from numpy.random import MT19937
 from numpy.random import RandomState, SeedSequence
 
-from .helpers import board_agent, Board, WorkerAction, RecrtCenterAction, Occupation
+from .helpers import board_agent, Board, WorkerAction, RecrtCenterAction, Occupation, ConnectedField4
 from .idgen import new_worker_id, new_recrtCenter_id, new_tree_id, reset as reset_ids
 from zerosum_env import utils
 
@@ -85,7 +85,7 @@ agents = {"random": random_agent}
 
 
 def populate_board(state, env):
-    obs = state[0].observation
+    full_obs = state[0].observation
     config = env.configuration
     size = env.configuration.size
 
@@ -100,98 +100,74 @@ def populate_board(state, env):
 
     # Distribute Carbon evenly into quartiles.
     half = math.ceil(size / 2)
-    grid = [[0] * half for _ in range(half)]
 
-    # Randomly place a few carbon "seeds".
-    for i in range(half):
-        # random distribution across entire quartile
-        grid[randint(0, half - 1)][randint(0, half - 1)] = i ** 2
-
-        # as well as a particular distribution weighted toward the center of the map
-        grid[randint(half // 2, half - 1)
-        ][randint(half // 2, half - 1)] = i ** 2
-
-    # Spread the seeds radially.
-    radius_grid = copy.deepcopy(grid)
-    for r in range(half):
-        for c in range(half):
-            value = grid[r][c]
-            if value == 0:
-                continue
-
-            # keep initial seed values, but constrain radius of clusters
-            radius = min(round((value / half) ** 0.5), 1)
-            for r2 in range(r - radius + 1, r + radius):
-                for c2 in range(c - radius + 1, c + radius):
-                    if 0 <= r2 < half and 0 <= c2 < half:
-                        distance = (abs(r2 - r) ** 2 + abs(c2 - c) ** 2) ** 0.5
-                        radius_grid[r2][c2] += int(value /
-                                                   max(1, distance) ** distance)
-
-    # add some random sprouts of carbon
-    radius_grid = np.asarray(radius_grid)
-    add_grid = np_rs.gumbel(0, 300.0, size=(half, half)).astype(int)
-    sparse_radius_grid = np_rs.binomial(1, 0.5, size=(half, half))
-    add_grid = np.clip(add_grid, 0, a_max=None) * sparse_radius_grid
-    radius_grid += add_grid
-
-    # add another set of random locations to the center corner
-    corner_grid = np_rs.gumbel(
-        0, 500.0, size=(half // 4, half // 4)).astype(int)
-    corner_grid = np.clip(corner_grid, 0, a_max=None)
-    radius_grid[half - (half // 4):, half - (half // 4):] += corner_grid
+    min_carbon_cells = int(math.ceil(config.startingCarbon / config.startingCellCarbon / 4))
+    n_carbon_cells = int(math.ceil(half * half * config.carbonCoverage / 100))
+    n_carbon_cells = max(n_carbon_cells, min_carbon_cells)
+    carbon_mean = min(config.startingCarbon / 4 / n_carbon_cells, config.startingCellCarbon)
+    assert carbon_mean > 0
+    half_grid_carbon = np.random.uniform(2 * carbon_mean, size=n_carbon_cells)
+    half_grid_indices = np.random.choice((half * half), size=n_carbon_cells, replace=False)
+    half_grid = np.zeros(half*half, np.float16)
+    half_grid[half_grid_indices] = half_grid_carbon
+    half_grid = half_grid.reshape((half, half))
 
     # Normalize the available carbon against the defined configuration starting carbon.
-    total = sum([sum(row) for row in radius_grid])
-    obs.carbon = [0] * (size ** 2)
-    for r, row in enumerate(radius_grid):
+    full_obs.carbon = [0] * (size ** 2)
+    for r, row in enumerate(half_grid):
         for c, val in enumerate(row):
-            val = min(int(val * config.startingCarbon / total / 4),
-                      config.startingCellCarbon)
-            obs.carbon[size * r + c] = val
-            obs.carbon[size * r + (size - c - 1)] = val
-            obs.carbon[size * (size - 1) - (size * r) + c] = val
-            obs.carbon[size * (size - 1) - (size * r) + (size - c - 1)] = val
+            val = min(int(val), config.startingCellCarbon)
+            full_obs.carbon[size * r + c] = val
+            full_obs.carbon[size * r + (size - c - 1)] = val
+            full_obs.carbon[size * (size - 1) - (size * r) + c] = val
+            full_obs.carbon[size * (size - 1) - (size * r) + (size - c - 1)] = val
 
     # Distribute the starting workers evenly.
     num_agents = len(state)
-    starting_positions = [0] * num_agents
+    num_bases = config.numberOfBases
+    starting_positions = [0] * num_agents * num_bases
     starting_positions[0] = size * (size // 4 + config.startPosOffset) + size // 4 + config.startPosOffset
     starting_positions[1] = size * (3 * size // 4 - config.startPosOffset) + 3 * size // 4 - config.startPosOffset
-    obs.carbon[starting_positions[0]] = 0
-    obs.carbon[starting_positions[1]] = 0
+    starting_positions[2] = size * (size // 4 + config.startPosOffset) + 3 * size // 4 - config.startPosOffset
+    starting_positions[3] = size * (3 * size // 4 - config.startPosOffset) + size // 4 + config.startPosOffset
+
+    for position in starting_positions:
+        full_obs.carbon[position] = 0
 
     # Initialize the players.
     reset_ids()
-    obs.players = []
+    full_obs.players = []
     for i in range(num_agents):
         # workers = {new_worker_id(i): [starting_positions[i], 0, '']}
-        recrtCenter = {new_recrtCenter_id(i): starting_positions[i]}
+        base_start_index = i * num_bases
+        base_dict = {new_recrtCenter_id(i): starting_positions[base_start_index+j] for j in range(num_bases)}
         # tree = {new_tree_id(i): starting_positions[i]+3}
-        obs.players.append([state[0].reward, recrtCenter, {}, {}])
+        full_obs.players.append([state[0].reward, base_dict, {}, {}])
 
-    obs.trees = {}
+    full_obs.trees = {}
 
+    full_obs.full_carbon = full_obs.carbon
+    for agent_state in state:
+        agent_state.observation.carbon = [0] * (size ** 2)
     return state
 
 
-def interpreter(state, env):
-    obs = state[0].observation
+def compute_next_board(state, env):
+    full_obs = state[0].observation
     config = env.configuration
 
-    # Initialize the board (place cell carbon and starting workers).
-    if env.done:
-        return populate_board(state, env)
+    full_obs.carbon = full_obs.full_carbon  # hack here for assuming carbon is fully observable!
 
     # Interpreter invoked here
     actions = [agent.action for agent in state]
-    board = Board(obs, config, actions)
+    board = Board(full_obs, config, actions)
     board = board.next()
-    state[0].observation = obs = utils.structify(board.observation)
+    state[0].observation = full_obs = utils.structify(board.observation)
+    full_obs.full_carbon = full_obs.carbon
 
     # Remove players with invalid status or insufficient potential.
     for index, agent in enumerate(state):
-        player_cash, recrtCenters, workers, trees = obs.players[index]
+        player_cash, recrtCenters, workers, trees = full_obs.players[index]
         if agent.status == "ACTIVE":
             collector, planter = [], []
             for worker in workers.values():
@@ -208,7 +184,7 @@ def interpreter(state, env):
                 agent.reward = board.step - board.configuration.episode_steps - 1
 
         if agent.status != "ACTIVE" and agent.status != "DONE":
-            obs.players[index] = [0, recrtCenters, {}, {}]
+            full_obs.players[index] = [0, recrtCenters, {}, {}]
 
     # Check if done (< 2 players and num_agents > 1)
     if len(state) > 1 and sum(1 for agent in state if agent.status == "ACTIVE") < 2:
@@ -219,11 +195,36 @@ def interpreter(state, env):
     # Update Rewards.
     for index, agent in enumerate(state):
         if agent.status == "ACTIVE":
-            agent.reward = obs.players[index][0]
+            agent.reward = full_obs.players[index][0]
         elif agent.status != "DONE":
             agent.reward = 0
 
+    # Filter unseen carbon(s) on map
+    for index, agent in enumerate(state):
+        agent.observation.carbon = [0] * (config.size ** 2)
+        visible_positions = []
+        for worker in board.players[index].workers:
+            if worker.is_collector:
+                visible_positions.append(worker.position)
+            elif worker.is_planter:
+                for direction in ConnectedField4:
+                    position = worker.position.translate(direction, config.size)
+                    visible_positions.append(position)
+
+        for visible_position in visible_positions:
+            index = visible_position.to_index(config.size)
+            agent.observation.carbon[index] = full_obs.full_carbon[index]
     return state
+
+
+def interpreter(state, env):
+    # Initialize the board (place cell carbon and starting workers).
+    if env.done:
+        new_state = populate_board(state, env)
+    else:
+        new_state = compute_next_board(state, env)
+
+    return new_state
 
 
 def renderer(state, env):

@@ -31,8 +31,8 @@ async function renderer({
   const { size } = environment.configuration;
   const directions = ["UP", "RIGHT", "DOWN", "LEFT"];
   const state = environment.steps[step];
-  const { carbon, players } = state[0].observation;
-
+  const { full_carbon, players } = state[0].observation;
+  const carbon = full_carbon;
         const colors = {
           bg: "#000B49",
           bgGradient: "#000B2A",

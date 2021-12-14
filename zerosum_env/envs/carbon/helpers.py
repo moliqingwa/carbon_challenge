@@ -25,6 +25,25 @@ from .idgen import new_worker_id, new_tree_id
 from .termtables import to_string
 
 
+ConnectedField4 = [  # 4-连通
+    Point(0, 1),  # 上
+    Point(1, 0),  # 右
+    Point(0, -1),  # 下
+    Point(-1, 0)  # 左
+]
+
+ConnectedField8 = [  # 8-连通
+    Point(-1, 1),  # 左上
+    Point(0, 1),  # 上
+    Point(1, 1),  # 右上
+    Point(1, 0),  # 右
+    Point(1, -1),  # 右下
+    Point(0, -1),  # 下
+    Point(-1, -1),  # 左下
+    Point(-1, 0)  # 左
+]
+
+
 # region Data Model Classes
 class Observation(zerosum_env.helpers.Observation):
     """
@@ -198,6 +217,16 @@ class Configuration(zerosum_env.helpers.Configuration):
     def start_pos_offset(self) -> float:
         """The offset of starting position"""
         return self["startPosOffset"]
+
+    @property
+    def carbon_coverage(self) -> int:
+        """The rate of cells coverage of carbon on the board."""
+        return self["carbonCoverage"]
+
+    @property
+    def number_of_bases(self) -> int:
+        """The number of bases for each player"""
+        return self["numberOfBases"]
 
 
 class WorkerAction(Enum):
@@ -381,27 +410,15 @@ class Tree:
         """
         Returns the directions of octet connected region.
         """
-        return [
-            Point(-1, 1),  # 左上
-            Point(0, 1),  # 上
-            Point(1, 1),  # 右上
-            Point(1, 0),  # 右
-            Point(1, -1),  # 右下
-            Point(0, -1),  # 下
-            Point(-1, -1),  # 左下
-            Point(-1, 0)  # 左
-        ]
+        global ConnectedField8
+        return ConnectedField8
 
     def quad_surround(self) -> List[Point]:
         """
         Returns the directions of quad connected region.
         """
-        return [
-            Point(0, 1),  # 上
-            Point(1, 0),  # 右
-            Point(0, -1),  # 下
-            Point(-1, 0)  # 左
-        ]
+        global ConnectedField4
+        return ConnectedField4
 
     @property
     def _observation(self) -> List[int]:
@@ -1036,7 +1053,8 @@ class Board:
         worker_collision_groups = group_by(board.workers.values(), lambda worker: worker.position)
         for position, collided_workers in worker_collision_groups.items():
             winner, deleted = resolve_collision(collided_workers)
-            collisions_flag[position] = len(deleted) > 0  # 若发生碰撞,标记为True;反之,为False
+            if len(deleted) > 0:  # 若发生碰撞,标记为True
+                collisions_flag[position] = True
 
             is_winner_collector = False
             if winner is not None:
