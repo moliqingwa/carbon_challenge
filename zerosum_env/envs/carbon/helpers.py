@@ -1134,15 +1134,15 @@ class Board:
                         board._add_tree_dict(new_tree, worker.id, 0)
 
         # 树吸收CO2预处理
-        quad_surround_tree_flag = {}  # 树的四连通区域标识, key: 坐标, value: 0-表示树不可吸收, >0-表示树可以吸收
+        quad_surround_tree_flag = {}  # 树的四连通标识, key: 坐标, value: 树ID, 表示该树可以吸收该坐标的CO2
         for tree in board.trees.values():
             cell = tree.cell
             for surround_tree in tree.quad_surround():  # 4连通区域
                 surround_tree_position = cell.position.translate(surround_tree, configuration.size)
 
-                # 将所有树周围的格子都标记
+                # 将树周围未标记过的格子进行标记
                 if surround_tree_position not in quad_surround_tree_flag:
-                    quad_surround_tree_flag[surround_tree_position] = 0
+                    quad_surround_tree_flag[surround_tree_position] = set()
 
                 # 判断树周围是否有人
                 surround_tree_cell = board.cells[surround_tree_position]
@@ -1152,7 +1152,7 @@ class Board:
                                  or (surround_tree_cell.worker.occupation == Occupation.COLLECTOR
                                      and surround_tree_cell.worker.next_action is not None))):
                     # 周围不存在树 且 (周围不存在人 或 周围存在种树员 或 周围存在捕碳员但不是停留 )
-                    quad_surround_tree_flag[surround_tree_position] = quad_surround_tree_flag[surround_tree_position] + 1
+                    quad_surround_tree_flag[surround_tree_position].add(tree.id)
 
         # Collect carbon from cells into trees
         cell_absorption_rate = configuration.cell_absorption_rate  # 树对格子的吸收率(4连通)
@@ -1185,7 +1185,7 @@ class Board:
 
                 if surround_tree_cell.carbon > 0 and \
                         surround_tree_position in quad_surround_tree_flag and \
-                        quad_surround_tree_flag[surround_tree_position] > 0:  # 树吸收周边CO2
+                        tree.id in quad_surround_tree_flag[surround_tree_position]:  # 树吸收周边CO2
                     absorbed_co2 = surround_tree_cell.carbon * cell_absorption_rate
                     tree_carbon += absorbed_co2  # 记入树
                     board_carbon_reduction[surround_tree_position] += absorbed_co2  # 记入格子
@@ -1197,7 +1197,7 @@ class Board:
         for surround_tree_position, absorption_flag in quad_surround_tree_flag.items():
             surround_tree_cell = board.cells[surround_tree_position]
             # 周围单元格的co2大于0，并且，单元格的碳可以被吸收
-            if surround_tree_cell.carbon > 0 and absorption_flag > 0:
+            if surround_tree_cell.carbon > 0 and absorption_flag:
                 current_value = surround_tree_cell.carbon - board_carbon_reduction[surround_tree_position]
                 surround_tree_cell._carbon = max(current_value, 0)
 
